@@ -1,0 +1,51 @@
+# ============================================================
+# HaoHan Metallurgy — config.yml
+# Mọi giá trị gameplay đều ở đây. Không hardcode trong code.
+# ============================================================
+
+# ── Debug ────────────────────────────────────────────────────
+debug: false
+
+# ── Tick Engine ───────────────────────────────────────────────
+# Máy chạy mỗi bao nhiêu ticks (20 ticks = 1 giây)
+tick-rate: 20
+
+# ── Máy (Machine) ────────────────────────────────────────────
+machines:
+  # Khoảng cách tối đa để player mở GUI máy (blocks)
+  interaction-range: 5
+
+# ── GUI ───────────────────────────────────────────────────────
+gui:
+  # Tên hiển thị của inventory GUI (hỗ trợ & color codes)
+  forge-title: "&8⚒ &6Ancient Forge"
+  # Slot layout: xem GuiManager để hiểu ý nghĩa từng slot
+  fuel-slot: 3
+  input-slot-1: 11
+  input-slot-2: 12
+  output-slot: 15
+  progress-slot: 13
+  temperature-slot: 4
+
+# ── Fuel values (ticks mỗi đơn vị nhiên liệu) ─────────────────
+# Format: MATERIAL_NAME: ticks
+fuel-values:
+  COAL: 800
+  CHARCOAL: 800
+  COAL_BLOCK: 7200
+  BLAZE_ROD: 2400
+  LAVA_BUCKET: 20000
+
+# ── Temperature thresholds ────────────────────────────────────
+temperature:
+  # Nhiệt độ tăng bao nhiêu mỗi tick khi có fuel
+  rise-per-tick: 2
+  # Nhiệt độ giảm bao nhiêu mỗi tick khi hết fuel
+  fall-per-tick: 1
+  # Nhiệt độ tối đa (°C)
+  max: 2000
+
+# ── Fail rate (Phase 5 — để trống ở Phase 1) ─────────────────
+fail:
+  enabled: false
+  base-chance: 0.05   # 5% fail mặc định

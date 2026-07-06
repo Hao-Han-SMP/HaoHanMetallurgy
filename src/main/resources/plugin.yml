@@ -1,0 +1,22 @@
+name: HaoHanMetallurgy
+version: '${project.version}'
+main: dev.haohansmp.metallurgy.HaoHanMetallurgy
+api-version: '1.21'
+description: Data-driven metallurgy system for HaoHan SMP
+authors: [ HaoHanSMP ]
+website: https://haohansmp.dev
+
+commands:
+  metallurgy:
+    description: HaoHan Metallurgy main command
+    usage: /metallurgy <reload|info|debug|list>
+    permission: haohansmp.metallurgy.admin
+    aliases: [ met, forge ]
+
+permissions:
+  haohansmp.metallurgy.admin:
+    description: Access to all /metallurgy admin commands
+    default: op
+  haohansmp.metallurgy.use:
+    description: Can interact with metallurgy machines
+    default: true

@@ -1,0 +1,159 @@
+package dev.haohansmp.metallurgy.recipe;
+
+import com.google.gson.*;
+import dev.haohansmp.metallurgy.HaoHanMetallurgy;
+import dev.haohansmp.metallurgy.machine.MachineType;
+import org.bukkit.Material;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Đọc và parse tất cả file *.json trong thư mục recipes/.
+ * Lưu vào Map theo MachineType để tra cứu nhanh.
+ */
+public class RecipeLoader {
+
+    private final HaoHanMetallurgy plugin;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    /** id → recipe */
+    private final Map<String, MetallurgyRecipe> recipesById = new LinkedHashMap<>();
+
+    /** machineType → list of recipes */
+    private final Map<MachineType, List<MetallurgyRecipe>> recipesByMachine = new EnumMap<>(MachineType.class);
+
+    public RecipeLoader(HaoHanMetallurgy plugin) {
+        this.plugin = plugin;
+    }
+
+    // ── Public API ─────────────────────────────────────────────
+
+    /** Load (hoặc reload) tất cả recipes từ disk. */
+    public void loadAll() {
+        recipesById.clear();
+        recipesByMachine.clear();
+
+        File recipeDir = new File(plugin.getDataFolder(), "recipes");
+        if (!recipeDir.exists()) {
+            recipeDir.mkdirs();
+            // Copy example từ resources
+            plugin.saveResource("recipes/example_forge.json", false);
+        }
+
+        File[] files;
+        try {
+            files = recipeDir.listFiles((dir, name) -> name.endsWith(".json"));
+        } catch (SecurityException e) {
+            plugin.getPluginLogger().error("Cannot read recipes directory: " + recipeDir.getPath(), e);
+            return;
+        }
+
+        if (files == null || files.length == 0) {
+            plugin.getPluginLogger().warn("No recipe files found in " + recipeDir.getPath());
+            return;
+        }
+
+        int loaded = 0;
+        for (File file : files) {
+            try {
+                MetallurgyRecipe recipe = parseFile(file);
+                if (recipe != null) {
+                    register(recipe);
+                    loaded++;
+                }
+            } catch (Exception e) {
+                plugin.getPluginLogger().error("Failed to load recipe file: " + file.getName(), e);
+            }
+        }
+
+        plugin.getPluginLogger().info("Loaded " + loaded + " recipe(s) from " + files.length + " file(s).");
+    }
+
+    /** Lấy recipe theo ID. */
+    public Optional<MetallurgyRecipe> getById(String id) {
+        return Optional.ofNullable(recipesById.get(id));
+    }
+
+    /** Lấy tất cả recipe của một loại máy. */
+    public List<MetallurgyRecipe> getForMachine(MachineType type) {
+        return recipesByMachine.getOrDefault(type, Collections.emptyList());
+    }
+
+    /** Tổng số recipe đã load. */
+    public int count() {
+        return recipesById.size();
+    }
+
+    // ── Internal ───────────────────────────────────────────────
+
+    private MetallurgyRecipe parseFile(File file) throws IOException {
+        String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        JsonObject obj = JsonParser.parseString(content).getAsJsonObject();
+
+        String id = obj.get("id").getAsString();
+        String machineTypeStr = obj.get("machine_type").getAsString();
+
+        // Parse inputs
+        List<MetallurgyRecipe.Ingredient> inputs = new ArrayList<>();
+        for (JsonElement el : obj.getAsJsonArray("inputs")) {
+            JsonObject inp = el.getAsJsonObject();
+            Material mat = requireMaterial(inp.get("material").getAsString(), file);
+            if (mat == null) return null;
+            inputs.add(new MetallurgyRecipe.Ingredient(mat, inp.get("amount").getAsInt()));
+        }
+
+        // Parse output
+        JsonObject outObj = obj.getAsJsonObject("output");
+        Material outMat = requireMaterial(outObj.get("material").getAsString(), file);
+        if (outMat == null) return null;
+
+        String displayName = outObj.has("display_name") ? outObj.get("display_name").getAsString() : null;
+        List<String> lore = new ArrayList<>();
+        if (outObj.has("lore")) {
+            outObj.getAsJsonArray("lore").forEach(l -> lore.add(l.getAsString()));
+        }
+        int cmd = outObj.has("custom_model_data") ? outObj.get("custom_model_data").getAsInt() : 0;
+
+        MetallurgyRecipe.OutputItem output = new MetallurgyRecipe.OutputItem(
+                outMat,
+                outObj.get("amount").getAsInt(),
+                displayName,
+                lore,
+                cmd
+        );
+
+        int fuelCost     = obj.has("fuel_cost")       ? obj.get("fuel_cost").getAsInt()       : 0;
+        int timeSeconds  = obj.has("time_seconds")    ? obj.get("time_seconds").getAsInt()    : 10;
+        int minTemp      = obj.has("min_temperature") ? obj.get("min_temperature").getAsInt() : 0;
+
+        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp);
+    }
+
+    private Material requireMaterial(String name, File file) {
+        Material mat = Material.matchMaterial(name);
+        if (mat == null) {
+            plugin.getPluginLogger().error("Unknown material '" + name + "' in " + file.getName());
+        }
+        return mat;
+    }
+
+    private void register(MetallurgyRecipe recipe) {
+        recipesById.put(recipe.getId(), recipe);
+
+        MachineType type;
+        try {
+            type = MachineType.valueOf(recipe.getMachineType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            plugin.getPluginLogger().warn("Unknown machine type '" + recipe.getMachineType()
+                    + "' in recipe '" + recipe.getId() + "' — skipping.");
+            return;
+        }
+
+        recipesByMachine.computeIfAbsent(type, k -> new ArrayList<>()).add(recipe);
+        plugin.getPluginLogger().debug("Registered recipe: " + recipe.getId());
+    }
+}

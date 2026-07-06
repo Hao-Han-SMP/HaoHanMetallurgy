@@ -1,0 +1,22 @@
+{
+  "_comment": "Ví dụ recipe: Embersteel Ingot từ Ancient Forge",
+  "id": "ancient_forge/embersteel_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "material": "IRON_INGOT", "amount": 4 },
+    { "material": "BLAZE_POWDER", "amount": 2 }
+  ],
+  "output": {
+    "material": "IRON_INGOT",
+    "amount": 2,
+    "display_name": "&6Embersteel Ingot",
+    "lore": [
+      "&7Được rèn từ lửa Nether.",
+      "&8Tier: &c2"
+    ],
+    "custom_model_data": 1001
+  },
+  "fuel_cost": 400,
+  "time_seconds": 30,
+  "min_temperature": 800
+}

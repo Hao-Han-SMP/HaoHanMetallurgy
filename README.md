@@ -1,72 +1,123 @@
-# HaoHanMetallurgy (Hảo Hán Metallurgy)
+<div align="center">
 
-[![Minecraft Version](https://img.shields.io/badge/Minecraft-1.21.1-green.svg)](https://papermc.io/)
-[![Server Software](https://img.shields.io/badge/Server-Purpur%20%2F%20Paper-blue.svg)](https://purpurmc.org/)
-[![Java Version](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
+<img src="image.png" alt="HaoHan Metallurgy banner" width="100%">
 
-**HaoHanMetallurgy** là một plugin Minecraft custom được thiết kế độc quyền dành riêng cho máy chủ **Hảo Hán SMP**. Plugin mang đến một hệ thống Lò Rèn Cổ Đại (Ancient Forge).
+# HaoHan Metallurgy
 
----
-![alt text](image.png)
+Plugin luyện kim tùy chỉnh cho HaoHan SMP, xây dựng quanh hệ thống Ancient Forge.
 
-## Yêu Cầu Hệ Thống (Requirements)
-*   **Server Software**: Paper, Purpur, hoặc Spigot (Khuyên dùng **Purpur / Paper 1.21.1**).
-*   **Java Version**: Java 21 hoặc mới hơn.
-*   **Tài Nguyên**: Bắt buộc cài đặt đầy đủ bộ ba: **Plugin**, **Datapack**, và **Resource Pack** đi kèm để hiển thị và hoạt động đầy đủ tính năng.
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.x-62B47A?style=for-the-badge&logo=minecraft&logoColor=white)](https://www.minecraft.net/)
+[![Paper](https://img.shields.io/badge/Paper-API-222222?style=for-the-badge&logo=paper&logoColor=white)](https://papermc.io/)
+[![Purpur](https://img.shields.io/badge/Purpur-Compatible-8A4FFF?style=for-the-badge)](https://purpurmc.org/)
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)](https://maven.apache.org/)
+[![Gson](https://img.shields.io/badge/Gson-JSON-2E7D32?style=for-the-badge&logo=google&logoColor=white)](https://github.com/google/gson)
+[![JUnit 5](https://img.shields.io/badge/JUnit-5-25A162?style=for-the-badge&logo=junit5&logoColor=white)](https://junit.org/junit5/)
 
----
+Ngôn ngữ: Tiếng Việt | [English](README.en.md)
 
-## Hướng Dẫn Cài Đặt và Biên Dịch (Installation & Build)
+</div>
 
-### 1. Dành cho Quản trị viên (Chạy bằng file JAR có sẵn)
-1.  **Cài đặt Plugin**:
-    *   Tải file `.jar` biên dịch từ dự án này.
-    *   Copy file `.jar` vào thư mục `/plugins/` của máy chủ.
-    *   Khởi động lại server để sinh thư mục cấu hình `/plugins/HaoHanMetallurgy/config.yml`.
-2.  **Cài đặt Datapack**:
-    *   Tải folder hoặc file `.zip` của [HaoHanMetallurgy_Datapack](https://github.com/Hao-Han-SMP/HaoHanMetallurgy_Datapack).
-    *   Thả vào thư mục `/world/datapacks/` của máy chủ.
-    *   Chạy lệnh `/reload` để tải các công thức rèn custom và tiến trình thành tựu.
-3.  **Cài đặt Resource Pack**:
-    *   Tải gói [HaoHanMetallurgy_Resourcepack](https://github.com/Hao-Han-SMP/HaoHanMetallurgy_Resourcepack).
-    *   Nén thành file `.zip` (hoặc để nguyên folder) bỏ vào thư mục `resourcepacks/` trên máy khách (Client) Minecraft của người chơi và kích hoạt nó.
+## Tổng quan
 
-### 2. Dành cho Lập trình viên (Tự biên dịch từ mã nguồn)
-1.  **Yêu cầu chuẩn bị**:
-    *   Cài đặt **Java Development Kit (JDK) 21**.
-    *   Cài đặt **Apache Maven (3.9+)**.
-2.  **Các bước biên dịch từ A -> Z**:
-    *   Mở terminal/command prompt tại thư mục gốc của dự án plugin.
-    *   Chạy lệnh Maven để dọn dẹp và đóng gói:
-        ```bash
-        mvn clean package -DskipTests
-        ```
-    *   Sau khi build thành công (`BUILD SUCCESS`), file plugin đầu ra dạng `.jar` sẽ xuất hiện tại thư mục:
-        `target/HaoHanMetallurgy-1.0-SNAPSHOT.jar`
-3.  **Tự động hóa phát triển nhanh (PowerShell Script)**:
-    *   Dự án có sẵn một file script hỗ trợ tự động hóa phát triển: **`build_and_start.ps1`**.
-    *   *Lưu ý: Script này chứa các đường dẫn cố định được cấu hình sẵn theo máy cục bộ của tác giả. Để sử dụng trên thiết bị khác, bạn cần mở file script này lên và chỉnh sửa lại các biến `$projectDir`, `$serverPluginsDir`, `$serverDir` cho khớp với đường dẫn thư mục dự án và server của bạn.*
-    *   Chạy script bằng lệnh:
-        ```powershell
-        .\build_and_start.ps1
-        ```
+HaoHan Metallurgy là plugin Minecraft dành cho HaoHan SMP. Plugin cung cấp hệ thống luyện kim tùy chỉnh, xử lý logic máy, công thức rèn, giao diện, vật phẩm tùy chỉnh và dữ liệu lưu trữ cho các máy luyện kim trong server.
 
----
+## Công nghệ sử dụng
 
-## Lệnh (Commands) và Quyền Hạn
-Tất cả các lệnh dưới đây yêu cầu quyền hạn quản trị viên: `haohansmp.metallurgy.admin` (mặc định OP sẽ có quyền này).
+| Toolkit | Vai trò |
+| --- | --- |
+| Paper API | Nền tảng API chính để phát triển plugin server. |
+| Purpur | Môi trường server khuyến nghị để triển khai. |
+| Java 21 | Ngôn ngữ và runtime chính của plugin. |
+| Maven | Quản lý dependency và build file `.jar`. |
+| Gson | Hỗ trợ xử lý dữ liệu JSON cho recipe và cấu hình. |
+| JUnit 5 | Viết và chạy unit test. |
 
-*   `/metallurgy info` — Hiển thị thông tin phiên bản plugin.
-*   `/metallurgy reload` — Tải lại toàn bộ cấu hình `config.yml` và các công thức rèn (recipes).
-*   `/metallurgy debug` — Bật/tắt chế độ debug (hiển thị logs chi tiết về nhiệt lượng/hoạt động).
-*   `/metallurgy list` — Hiển thị danh sách tất cả các lò rèn đang hoạt động trong thế giới.
-*   `/metallurgy give <player> <item_id> <amount>` — Nhận vật phẩm tùy chỉnh từ plugin (Ví dụ: Ember Ore).
+## Thành phần dự án
 
----
+| Thành phần | Mô tả |
+| --- | --- |
+| `HaoHanMetallurgy` | Plugin server, xử lý logic, GUI, công thức và dữ liệu máy. |
+| `HaoHanMetallurgy_Datapack` | Datapack chặn một số công thức vanilla, thêm advancement, loot table và tag liên quan. |
+| `HaoHanMetallurgy_Resourcepack` | Resource pack chứa texture và model cần thiết cho vật phẩm hoặc khối tùy chỉnh. |
 
-## Requirement
+## Yêu cầu
 
-Bộ công cụ lò rèn **HaoHanMetallurgy** bao gồm 3 phần độc lập bắt buộc cài đặt cùng nhau:
-1.  **[HaoHanMetallurgy (Plugin)](https://github.com/Hao-Han-SMP/HaoHanMetallurgy)**: Phần cốt lõi xử lý logic máy, nhiệt lượng, GUI và hệ thống lưu trữ YAML.
-2.  **[HaoHanMetallurgy_Resourcepack](https://github.com/Hao-Han-SMP/HaoHanMetallurgy_Resourcepack)**: Bộ tài nguyên hình ảnh texture (`metallurgy.png`), các file cấu hình mô hình 3D khối đặc (`metallurgy.json`, `paper.json`).
-3.  **[HaoHanMetallurgy_Datapack](https://github.com/Hao-Han-SMP/HaoHanMetallurgy_Datapack)**: Định nghĩa các công thức nung custom, loot tables của quặng, và hệ thống tiến trình thành tựu (advancements).
+- Minecraft server chạy Paper hoặc Purpur.
+- Java 21 trở lên.
+- Maven 3.9 trở lên nếu cần build từ mã nguồn.
+- Datapack và resource pack đi kèm để hệ thống hoạt động đầy đủ.
+
+## Cài đặt
+
+1. Build hoặc tải file `.jar` của plugin.
+2. Copy file `.jar` vào thư mục `plugins/` của server.
+3. Copy thư mục hoặc file `.zip` của datapack vào `world/datapacks/`.
+4. Cài resource pack cho client hoặc cấu hình server để người chơi tải resource pack khi tham gia.
+5. Khởi động lại server.
+6. Chạy `/reload` nếu cần nạp lại datapack trong quá trình phát triển.
+
+Sau lần chạy đầu tiên, plugin sẽ tạo file cấu hình tại `plugins/HaoHanMetallurgy/config.yml`.
+
+## Build từ mã nguồn
+
+Chạy lệnh sau tại thư mục gốc của dự án plugin:
+
+```bash
+mvn clean package
+```
+
+File `.jar` sau khi build nằm trong thư mục `target/`.
+
+Nếu chỉ cần build nhanh mà không chạy test:
+
+```bash
+mvn clean package -DskipTests
+```
+
+## Script phát triển
+
+Dự án có file `build_and_start.ps1` để hỗ trợ build và khởi động server trong môi trường phát triển cục bộ.
+
+Trước khi dùng, kiểm tra và chỉnh lại các đường dẫn trong script cho phù hợp với máy của bạn, đặc biệt là đường dẫn dự án, thư mục `plugins/` và thư mục server.
+
+```powershell
+.\build_and_start.ps1
+```
+
+## Lệnh
+
+Các lệnh quản trị dùng permission `haohansmp.metallurgy.admin`. Người chơi OP có permission này theo mặc định.
+
+| Lệnh | Mô tả |
+| --- | --- |
+| `/metallurgy info` | Hiển thị thông tin plugin. |
+| `/metallurgy reload` | Nạp lại cấu hình và công thức. |
+| `/metallurgy debug` | Bật hoặc tắt chế độ debug. |
+| `/metallurgy list` | Hiển thị danh sách máy luyện kim đang được quản lý. |
+| `/metallurgy give <player> <item_id> [amount]` | Trao vật phẩm tùy chỉnh cho người chơi. |
+
+Alias của lệnh chính: `/met`, `/forge`.
+
+## Permission
+
+| Permission | Mặc định | Mô tả |
+| --- | --- | --- |
+| `haohansmp.metallurgy.admin` | OP | Cho phép sử dụng các lệnh quản trị. |
+| `haohansmp.metallurgy.use` | Tất cả người chơi | Cho phép tương tác với máy luyện kim. |
+
+## Cấu trúc công thức
+
+Các công thức luyện kim được lưu trong `src/main/resources/recipes/`. Mỗi công thức định nghĩa nguyên liệu, kết quả và các thông số xử lý của Ancient Forge.
+
+Ví dụ tham khảo có sẵn tại:
+
+```text
+src/main/resources/recipes/example_forge.json
+```
+
+## Ghi chú vận hành
+
+- Luôn cài plugin, datapack và resource pack cùng nhau để tránh thiếu recipe, texture hoặc dữ liệu progression.
+- Không nên chỉnh trực tiếp dữ liệu trong thư mục runtime của server nếu thay đổi có thể được quản lý từ mã nguồn.
+- Khi cập nhật datapack hoặc recipe trong môi trường đang chạy, kiểm tra lại bằng `/reload` và `/metallurgy reload`.

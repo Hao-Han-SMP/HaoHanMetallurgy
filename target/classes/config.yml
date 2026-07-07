@@ -83,3 +83,23 @@ progression:
 fail:
   enabled: false
   base-chance: 0.05   # 5% fail mặc định
+
+# ── Mô hình 3D lò rèn (Phase 5.5) ──────────────────────────────
+forge-model:
+  enabled: true
+  material: "PAPER"
+  # Minecraft 1.21.4+: dùng item_model component để trỏ thẳng tới
+  # HaoHanMetallurgy_Resourcepack/assets/minecraft/items/metallurgy.json
+  item-model: "haohansmp:metallurgy"
+  # Fallback/debug cho resource pack kiểu cũ.
+  custom-model-data: 10001
+  # Bạn có thể tăng giảm scale ở đây nếu model hiển thị quá to/nhỏ trong game
+  scale:
+    x: 3.0
+    y: 4.0
+    z: 3.0
+  # Điều chỉnh vị trí tương đối của mô hình 3D để nó khớp chính xác với tâm của lò rèn
+  offset:
+    x: 0.5
+    y: 0.0    # Nâng display lên 0.5 block so với bản trước
+    z: 0.5

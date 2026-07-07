@@ -91,7 +91,8 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
             plugin.getConfigManager().reload();
             plugin.getRecipeLoader().loadAll();
             plugin.getTickEngine().restart();
-            sender.sendMessage(PREFIX + "§aReload thành công!");
+            int refreshed = plugin.getMachineManager().refreshForgeDisplays();
+            sender.sendMessage(PREFIX + "§aReload thành công! §7Refreshed models: §f" + refreshed);
         } catch (Exception e) {
             sender.sendMessage(PREFIX + "§cReload thất bại: " + e.getMessage());
             plugin.getPluginLogger().error("Reload failed", e);

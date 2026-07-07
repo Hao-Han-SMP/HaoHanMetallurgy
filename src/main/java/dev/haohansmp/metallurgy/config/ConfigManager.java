@@ -2,6 +2,7 @@ package dev.haohansmp.metallurgy.config;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.EnumMap;
@@ -38,6 +39,7 @@ public class ConfigManager {
     // Forge Model Config (Phase 5.5)
     private boolean modelEnabled;
     private Material modelMaterial;
+    private NamespacedKey modelItemModel;
     private int modelCustomModelData;
     private double modelScaleX, modelScaleY, modelScaleZ;
     private double modelOffsetX, modelOffsetY, modelOffsetZ;
@@ -74,6 +76,7 @@ public class ConfigManager {
 
     public boolean isModelEnabled()          { return modelEnabled; }
     public Material getModelMaterial()        { return modelMaterial; }
+    public NamespacedKey getModelItemModel()  { return modelItemModel; }
     public int getModelCustomModelData()     { return modelCustomModelData; }
     public double getModelScaleX()           { return modelScaleX; }
     public double getModelScaleY()           { return modelScaleY; }
@@ -137,13 +140,41 @@ public class ConfigManager {
         if (modelMaterial == null) {
             modelMaterial = Material.PAPER;
         }
+        modelItemModel = parseNamespacedKey(config.getString("forge-model.item-model", "haohansmp:metallurgy"));
         modelCustomModelData = config.getInt("forge-model.custom-model-data", 0);
-        modelScaleX = config.getDouble("forge-model.scale.x", 1.0);
-        modelScaleY = config.getDouble("forge-model.scale.y", 1.0);
-        modelScaleZ = config.getDouble("forge-model.scale.z", 1.0);
+        modelScaleX = config.getDouble("forge-model.scale.x", 3.0);
+        modelScaleY = config.getDouble("forge-model.scale.y", 4.0);
+        modelScaleZ = config.getDouble("forge-model.scale.z", 3.0);
+        if (modelScaleX == 1.0 && modelScaleY == 1.0 && modelScaleZ == 1.0) {
+            plugin.getPluginLogger().warn("forge-model.scale is still 1x1x1 in config.yml. Auto-upgrading display scale to 3x4x3 for the Ancient Forge model.");
+            modelScaleX = 3.0;
+            modelScaleY = 4.0;
+            modelScaleZ = 3.0;
+        }
         modelOffsetX = config.getDouble("forge-model.offset.x", 0.5);
-        modelOffsetY = config.getDouble("forge-model.offset.y", 0.5);
+        modelOffsetY = config.getDouble("forge-model.offset.y", 0.0);
+        if (modelOffsetY == -0.5) {
+            plugin.getPluginLogger().warn("forge-model.offset.y is still -0.5 in config.yml. Auto-upgrading display Y offset to 0.0 to lift the Ancient Forge model by 0.5 block.");
+            modelOffsetY = 0.0;
+        }
         modelOffsetZ = config.getDouble("forge-model.offset.z", 0.5);
+    }
+
+    private NamespacedKey parseNamespacedKey(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        String value = raw.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!value.contains(":")) {
+            value = plugin.getName().toLowerCase(java.util.Locale.ROOT) + ":" + value;
+        }
+
+        NamespacedKey key = NamespacedKey.fromString(value);
+        if (key == null) {
+            plugin.getPluginLogger().warn("Invalid forge-model.item-model in config: " + raw + ". Item model will not be applied.");
+        }
+        return key;
     }
 
     private void loadMiningRequirements() {

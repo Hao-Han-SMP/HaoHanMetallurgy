@@ -168,6 +168,7 @@ public class ForgeListener implements Listener {
             
             // Hoàn trả lại các block cũ của lò rèn về trạng thái ban đầu
             restoreOriginalBlocks(activeForge, block);
+            plugin.getMachineManager().saveAll();
 
             // Gửi tin nhắn
             event.getPlayer().sendMessage("§8[§6Forge§8] §eLò Rèn Cổ Đại đã bị hủy kích hoạt. Các vật phẩm đã rơi ra.");
@@ -196,6 +197,20 @@ public class ForgeListener implements Listener {
         if (rotation == -1) {
             player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc lò rèn không hợp lệ!");
             return;
+        }
+
+        // Lấy hướng xoay của Blast Furnace để áp dụng làm hướng mặt chính của mô hình 3D
+        if (controllerBlock.getBlockData() instanceof org.bukkit.block.data.Directional directional) {
+            org.bukkit.block.BlockFace facing = directional.getFacing();
+            if (facing == org.bukkit.block.BlockFace.WEST) {
+                rotation = 90;
+            } else if (facing == org.bukkit.block.BlockFace.NORTH) {
+                rotation = 180;
+            } else if (facing == org.bukkit.block.BlockFace.EAST) {
+                rotation = 270;
+            } else {
+                rotation = 0; // SOUTH
+            }
         }
 
         // 1. Chụp lại toàn bộ các khối cấu trúc thật để phục hồi sau này
@@ -233,6 +248,7 @@ public class ForgeListener implements Listener {
         }
 
         player.sendMessage("§8[§6Forge§8] §a✔ Kích hoạt Lò Rèn Cổ Đại thành công! Mô hình 3D đã được thiết lập.");
+        plugin.getMachineManager().saveAll();
         plugin.getPluginLogger().info(
             "AncientForge activated at " + formatLoc(loc) + " by " + player.getName()
         );
@@ -249,6 +265,7 @@ public class ForgeListener implements Listener {
         if (machineOpt.isPresent()) {
             dropMachineContents(machineOpt.get());
         }
+        plugin.getMachineManager().saveAll();
 
         player.sendMessage("§8[§6Forge§8] §eAncient Forge đã bị phá hủy. Các vật phẩm trong lò đã rơi ra.");
         plugin.getPluginLogger().info(
@@ -305,6 +322,7 @@ public class ForgeListener implements Listener {
         plugin.getMachineManager().unregister(coreLoc);
 
         restoreOriginalBlocks(forge, brokenBlock);
+        plugin.getMachineManager().saveAll();
 
         coreLoc.getWorld().getPlayers().stream()
             .filter(p -> p.getLocation().distanceSquared(coreLoc) < 50 * 50)

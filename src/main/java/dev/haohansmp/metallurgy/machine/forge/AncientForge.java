@@ -47,6 +47,27 @@ public class AncientForge extends Machine {
         return originalBlocks;
     }
 
+    public void refreshDisplayEntity() {
+        removeDisplayEntity();
+        spawnDisplayEntity();
+    }
+
+    public void ensureBarrierBlocks() {
+        Location loc = getLocation();
+        if (loc.getWorld() == null) return;
+
+        loc.getBlock().setType(Material.BARRIER, false);
+        for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
+            int rx = offset.dx();
+            int rz = offset.dz();
+            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
+            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+            loc.clone().add(rx, offset.dy(), rz).getBlock().setType(Material.BARRIER, false);
+        }
+    }
+
     private void spawnDisplayEntity() {
         if (!plugin.getConfigManager().isModelEnabled()) return;
         
@@ -67,20 +88,25 @@ public class AncientForge extends Machine {
             ItemStack displayItem = new ItemStack(plugin.getConfigManager().getModelMaterial());
             ItemMeta meta = displayItem.getItemMeta();
             if (meta != null) {
+                if (plugin.getConfigManager().getModelItemModel() != null) {
+                    meta.setItemModel(plugin.getConfigManager().getModelItemModel());
+                }
                 meta.setCustomModelData(plugin.getConfigManager().getModelCustomModelData());
                 displayItem.setItemMeta(meta);
             }
             entity.setItemStack(displayItem);
             entity.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.FIXED);
             
-            plugin.getPluginLogger().info("Spawning forge model: material=" + displayItem.getType() + ", customModelData=" + (meta != null && meta.hasCustomModelData() ? meta.getCustomModelData() : "none"));
+            plugin.getPluginLogger().info("Spawning forge model: material=" + displayItem.getType()
+                + ", itemModel=" + (meta != null && meta.hasItemModel() ? meta.getItemModel() : "none")
+                + ", customModelData=" + (meta != null && meta.hasCustomModelData() ? meta.getCustomModelData() : "none"));
             
             // Set scale
             double sx = plugin.getConfigManager().getModelScaleX();
             double sy = plugin.getConfigManager().getModelScaleY();
             double sz = plugin.getConfigManager().getModelScaleZ();
             entity.setTransformation(new org.bukkit.util.Transformation(
-                new org.joml.Vector3f(0f, 0f, 0f),
+                new org.joml.Vector3f(0f, 0.5f, 0f),
                 new org.joml.Quaternionf(),
                 new org.joml.Vector3f((float) sx, (float) sy, (float) sz),
                 new org.joml.Quaternionf()
@@ -168,13 +194,57 @@ public class AncientForge extends Machine {
         );
     }
 
+    private final java.util.Random random = new java.util.Random();
+
     /**
-     * Hook tick — Phase 5 sẽ thêm particle effects, bossbar, v.v.
-     * Phase 3: chỉ log debug nếu cần.
+     * Hook tick — Thêm các hiệu ứng hình ảnh (khói đen, bụi tro, tia lửa)
+     * và âm thanh ambient (tí tách lửa, ục ục dung nham) khi lò đang nung.
      */
     @Override
     protected void onTick() {
         if (getState() == MachineState.WORKING) {
+            Location loc = getLocation();
+            org.bukkit.World world = loc.getWorld();
+            if (world != null) {
+                // 1. Khói đen và khói ấm bay lên từ đỉnh lò rèn (Y = 3.2 để thoát ra từ nóc)
+                Location chimney = loc.clone().add(0.5, 3.2, 0.5);
+                if (random.nextInt(3) == 0) {
+                    world.spawnParticle(org.bukkit.Particle.LARGE_SMOKE, chimney, 2, 0.15, 0.1, 0.15, 0.02);
+                }
+                if (random.nextInt(4) == 0) {
+                    world.spawnParticle(org.bukkit.Particle.CAMPFIRE_COSY_SMOKE, chimney, 1, 0.1, 0.1, 0.1, 0.01);
+                }
+                // Bụi tro rơi lơ lửng xung quanh thân lò
+                if (random.nextInt(5) == 0) {
+                    Location ashLoc = loc.clone().add(
+                        0.5 + (random.nextDouble() - 0.5) * 2.5,
+                        1.5 + random.nextDouble() * 1.5,
+                        0.5 + (random.nextDouble() - 0.5) * 2.5
+                    );
+                    world.spawnParticle(org.bukkit.Particle.ASH, ashLoc, 2, 0.2, 0.2, 0.2, 0.01);
+                }
+
+                // 2. Tia lửa bắn ra từ trung tâm lò Blast Furnace (Y = 0.5)
+                Location fireSource = loc.clone().add(0.5, 0.5, 0.5);
+                if (random.nextInt(20) == 0) { // Thỉnh thoảng bắn tia dung nham popped
+                    world.spawnParticle(org.bukkit.Particle.LAVA, fireSource, 3, 0.25, 0.25, 0.25, 0.05);
+                }
+                if (random.nextInt(6) == 0) { // Bụi lửa nhỏ
+                    world.spawnParticle(org.bukkit.Particle.FLAME, fireSource, 2, 0.15, 0.15, 0.15, 0.02);
+                }
+
+                // 3. Âm thanh tí tách và sôi ục ục của dung nham/lửa nung
+                if (random.nextInt(12) == 0) { // Lửa lò tí tách
+                    world.playSound(fireSource, org.bukkit.Sound.BLOCK_FURNACE_FIRE_CRACKLE, 0.8f, 1.0f);
+                }
+                if (random.nextInt(25) == 0) { // Bong bóng dung nham nổ tí tách
+                    world.playSound(fireSource, org.bukkit.Sound.BLOCK_LAVA_POP, 0.7f, 1.2f);
+                }
+                if (random.nextInt(40) == 0) { // Dung nham sôi âm ỉ
+                    world.playSound(fireSource, org.bukkit.Sound.BLOCK_LAVA_AMBIENT, 0.6f, 0.8f);
+                }
+            }
+
             plugin.getPluginLogger().debug(
                 "[Forge@" + formatLoc(getLocation()) + "] "
                 + (int)(getProgressPercent() * 100) + "% "

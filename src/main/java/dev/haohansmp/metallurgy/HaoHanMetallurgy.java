@@ -88,8 +88,11 @@ public final class HaoHanMetallurgy extends JavaPlugin {
             metallurgyCmd.setTabCompleter(cmd);
         }
 
-        // 8. Restore active machines
-        machineManager.loadAll();
+        // 8. Restore active machines sau 1 tick để world/chunk state ổn định hơn khi restart.
+        getServer().getScheduler().runTask(this, () -> {
+            machineManager.loadAll();
+            pluginLogger.info("Restored delayed machine state. Machines: " + machineManager.count());
+        });
 
         pluginLogger.info("Core Engine enabled. Recipes: " + recipeLoader.count()
             + " | Machines: " + machineManager.count());

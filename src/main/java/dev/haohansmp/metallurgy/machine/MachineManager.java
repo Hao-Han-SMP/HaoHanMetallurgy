@@ -93,6 +93,18 @@ public class MachineManager {
         }
     }
 
+    public int refreshForgeDisplays() {
+        int refreshed = 0;
+        for (Machine machine : machines.values()) {
+            if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+                forge.ensureBarrierBlocks();
+                forge.refreshDisplayEntity();
+                refreshed++;
+            }
+        }
+        return refreshed;
+    }
+
     // ── Shutdown ──────────────────────────────────────────────
 
     /**
@@ -180,6 +192,7 @@ public class MachineManager {
                 }
 
                 dev.haohansmp.metallurgy.machine.forge.AncientForge forge = new dev.haohansmp.metallurgy.machine.forge.AncientForge(plugin, loc, rotation, originalBlocks);
+                forge.ensureBarrierBlocks();
 
                 List<?> invList = yaml.getList(path + ".inventory");
                 if (invList != null) {
@@ -207,7 +220,6 @@ public class MachineManager {
             }
         }
 
-        file.delete();
         plugin.getPluginLogger().info("Restored all active machines from machines.yml.");
     }
 }

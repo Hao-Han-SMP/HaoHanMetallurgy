@@ -89,11 +89,13 @@ forge-model:
   enabled: true
   material: "PAPER"
   custom-model-data: 10001
+  # Bạn có thể tăng giảm scale ở đây nếu model hiển thị quá to/nhỏ trong game
   scale:
     x: 1.0
     y: 1.0
     z: 1.0
+  # Điều chỉnh vị trí tương đối của mô hình 3D để nó khớp chính xác với tâm của lò rèn
   offset:
     x: 0.5
-    y: 0.5
+    y: -0.5   # Đặt y thấp xuống để chân mô hình chạm đất
     z: 0.5

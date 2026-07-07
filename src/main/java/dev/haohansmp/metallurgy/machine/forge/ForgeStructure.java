@@ -4,23 +4,11 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Định nghĩa cấu trúc multiblock của Ancient Forge.
- *
- * Layout (nhìn từ trên xuống):
- * <pre>
- *   [SB][SB][SB]        y+1: [  ][SCF][  ]
- *   [SB][BF][SB]              (Soul Campfire on top)
- *   [SB][SB][SB]
- *
- *   SB  = Stone Bricks
- *   BF  = Blast Furnace (CONTROLLER — player right-click vào đây)
- *   SCF = Soul Campfire
- * </pre>
- *
- * Tổng: 8 Stone Bricks + 1 Blast Furnace + 1 Soul Campfire = 10 blocks.
+ * Định nghĩa cấu trúc multiblock của Ancient Forge mới (3x2x4).
  */
 public final class ForgeStructure {
 
@@ -28,14 +16,26 @@ public final class ForgeStructure {
     public static final Material CONTROLLER_MATERIAL = Material.BLAST_FURNACE;
 
     /**
-     * Một block bắt buộc trong cấu trúc, tính tương đối so với controller.
+     * Một block bắt buộc trong cấu trúc, tính tương đối so với controller và góc xoay.
      */
     public record BlockOffset(int dx, int dy, int dz, Material material) {
-        public boolean matchesAt(Location controllerLoc) {
+        public boolean matchesAt(Location controllerLoc, int rotation) {
+            int rx = dx;
+            int rz = dz;
+            if (rotation == 90) {
+                rx = -dz;
+                rz = dx;
+            } else if (rotation == 180) {
+                rx = -dx;
+                rz = -dz;
+            } else if (rotation == 270) {
+                rx = dz;
+                rz = -dx;
+            }
             Block block = controllerLoc.getWorld().getBlockAt(
-                controllerLoc.getBlockX() + dx,
+                controllerLoc.getBlockX() + rx,
                 controllerLoc.getBlockY() + dy,
-                controllerLoc.getBlockZ() + dz
+                controllerLoc.getBlockZ() + rz
             );
             return block.getType() == material;
         }
@@ -43,65 +43,122 @@ public final class ForgeStructure {
 
     /** Danh sách tất cả blocks bắt buộc (không kể controller). */
     public static final List<BlockOffset> REQUIRED_BLOCKS = List.of(
-        // Ring xung quanh controller (cùng Y)
-        new BlockOffset(-1, 0, -1, Material.STONE_BRICKS),
-        new BlockOffset( 0, 0, -1, Material.STONE_BRICKS),
-        new BlockOffset( 1, 0, -1, Material.STONE_BRICKS),
-        new BlockOffset(-1, 0,  0, Material.STONE_BRICKS),
-        new BlockOffset( 1, 0,  0, Material.STONE_BRICKS),
-        new BlockOffset(-1, 0,  1, Material.STONE_BRICKS),
-        new BlockOffset( 0, 0,  1, Material.STONE_BRICKS),
-        new BlockOffset( 1, 0,  1, Material.STONE_BRICKS),
-        // Block phía trên controller
-        new BlockOffset( 0, 1,  0, Material.SOUL_CAMPFIRE)
+        // Base (Y = -1): 6 Mud Bricks
+        new BlockOffset(-1, -1, 0, Material.MUD_BRICKS),
+        new BlockOffset( 0, -1, 0, Material.MUD_BRICKS),
+        new BlockOffset( 1, -1, 0, Material.MUD_BRICKS),
+        new BlockOffset(-1, -1, 1, Material.MUD_BRICKS),
+        new BlockOffset( 0, -1, 1, Material.MUD_BRICKS),
+        new BlockOffset( 1, -1, 1, Material.MUD_BRICKS),
+
+        // Y = 0: 5 Cobblestones (Controller là Blast Furnace ở 0,0,0)
+        new BlockOffset(-1,  0, 0, Material.COBBLESTONE),
+        new BlockOffset( 1,  0, 0, Material.COBBLESTONE),
+        new BlockOffset(-1,  0, 1, Material.COBBLESTONE),
+        new BlockOffset( 0,  0, 1, Material.COBBLESTONE),
+        new BlockOffset( 1,  0, 1, Material.COBBLESTONE),
+
+        // Y = 1: Cauldron + 5 Cobblestones
+        new BlockOffset( 0,  1, 0, Material.CAULDRON),
+        new BlockOffset(-1,  1, 0, Material.COBBLESTONE),
+        new BlockOffset( 1,  1, 0, Material.COBBLESTONE),
+        new BlockOffset(-1,  1, 1, Material.COBBLESTONE),
+        new BlockOffset( 0,  1, 1, Material.COBBLESTONE),
+        new BlockOffset( 1,  1, 1, Material.COBBLESTONE),
+
+        // Y = 2: 6 Cobblestones
+        new BlockOffset(-1,  2, 0, Material.COBBLESTONE),
+        new BlockOffset( 0,  2, 0, Material.COBBLESTONE),
+        new BlockOffset( 1,  2, 0, Material.COBBLESTONE),
+        new BlockOffset(-1,  2, 1, Material.COBBLESTONE),
+        new BlockOffset( 0,  2, 1, Material.COBBLESTONE),
+        new BlockOffset( 1,  2, 1, Material.COBBLESTONE)
     );
 
     // Prevent instantiation
     private ForgeStructure() {}
 
-    // ── Validation ────────────────────────────────────────────
-
     /**
-     * Kiểm tra cấu trúc có đầy đủ không tại vị trí controller.
-     * @return true nếu tất cả blocks đúng.
+     * Xác định góc xoay hợp lệ của cấu trúc (0, 90, 180, 270).
+     * @return góc xoay, hoặc -1 nếu không hợp lệ.
      */
-    public static boolean validate(Location controllerLoc) {
-        if (controllerLoc.getBlock().getType() != CONTROLLER_MATERIAL) return false;
-        for (BlockOffset offset : REQUIRED_BLOCKS) {
-            if (!offset.matchesAt(controllerLoc)) return false;
+    public static int getValidRotation(Location controllerLoc) {
+        if (controllerLoc.getBlock().getType() != CONTROLLER_MATERIAL) return -1;
+        for (int rot : List.of(0, 90, 180, 270)) {
+            boolean ok = true;
+            for (BlockOffset offset : REQUIRED_BLOCKS) {
+                if (!offset.matchesAt(controllerLoc, rot)) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) return rot;
         }
-        return true;
+        return -1;
     }
 
     /**
-     * Lấy danh sách block bị thiếu (để hiển thị cho player).
-     * @return List mô tả các block còn thiếu.
+     * Kiểm tra cấu trúc có đầy đủ không tại vị trí controller.
+     * @return true nếu cấu trúc đúng tại ít nhất 1 góc xoay.
+     */
+    public static boolean validate(Location controllerLoc) {
+        return getValidRotation(controllerLoc) != -1;
+    }
+
+    /**
+     * Lấy danh sách block bị thiếu của hướng xoay sát nhất.
      */
     public static List<String> getMissingBlocks(Location controllerLoc) {
-        return REQUIRED_BLOCKS.stream()
-            .filter(o -> !o.matchesAt(controllerLoc))
-            .map(o -> String.format("§c✗ §7%s tại (%+d, %+d, %+d)",
-                o.material().name(), o.dx(), o.dy(), o.dz()))
+        int bestRot = 0;
+        int minMissing = Integer.MAX_VALUE;
+        List<BlockOffset> bestMissingList = new ArrayList<>();
+
+        for (int rot : List.of(0, 90, 180, 270)) {
+            List<BlockOffset> missing = new ArrayList<>();
+            for (BlockOffset offset : REQUIRED_BLOCKS) {
+                if (!offset.matchesAt(controllerLoc, rot)) {
+                    missing.add(offset);
+                }
+            }
+            if (missing.size() < minMissing) {
+                minMissing = missing.size();
+                bestRot = rot;
+                bestMissingList = missing;
+            }
+        }
+
+        final int finalRot = bestRot;
+        return bestMissingList.stream()
+            .map(o -> {
+                int rx = o.dx();
+                int rz = o.dz();
+                if (finalRot == 90) { rx = -o.dz(); rz = o.dx(); }
+                else if (finalRot == 180) { rx = -o.dx(); rz = -o.dz(); }
+                else if (finalRot == 270) { rx = o.dz(); rz = -o.dx(); }
+                return String.format("§c✗ §7%s tại (%+d, %+d, %+d)",
+                    o.material().name(), rx, o.dy(), rz);
+            })
             .toList();
     }
 
     /**
      * Kiểm tra một block có phải là thành phần của cấu trúc forge không.
-     * Dùng khi player phá block để kiểm tra máy lân cận có bị ảnh hưởng không.
      */
     public static boolean isStructuralMaterial(Material material) {
         return material == CONTROLLER_MATERIAL
-            || material == Material.STONE_BRICKS
-            || material == Material.SOUL_CAMPFIRE;
+            || material == Material.MUD_BRICKS
+            || material == Material.COBBLESTONE
+            || material == Material.CAULDRON;
     }
 
-    /** Mô tả cấu trúc cho player (dùng trong /metallurgy guide hoặc hint). */
+    /** Mô tả cấu trúc cho player. */
     public static String getDescription() {
         return """
-                §6§lAncient Forge Structure:
-                §7• §eBlast Furnace §7(center) ← right-click
-                §7• §e8× Stone Bricks §7(surrounding ring, same level)
-                §7• §eSoul Campfire §7(directly above Blast Furnace)
-                §7Shift + right-click Blast Furnace để xem trạng thái.""";
+                §6§lCấu trúc Lò Rèn Cổ Đại mới (3x2x4):
+                §7• §eBlast Furnace (Core) §7tại Y=0
+                §7• §e6× Mud Bricks §7làm đế tại Y=-1
+                §7• §eCauldron §7ngay trên Blast Furnace tại Y=1
+                §7• §e16× Cobblestone §7bọc xung quanh
+                §7Shift + Right-click Blast Furnace để xem gợi ý xây lò.""";
     }
 }

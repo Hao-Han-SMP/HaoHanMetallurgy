@@ -24,8 +24,96 @@ import java.util.List;
  */
 public class AncientForge extends Machine {
 
-    public AncientForge(HaoHanMetallurgy plugin, Location controllerLocation) {
+    private final int rotation;
+    private org.bukkit.entity.ItemDisplay displayEntity = null;
+
+    public AncientForge(HaoHanMetallurgy plugin, Location controllerLocation, int rotation) {
         super(plugin, controllerLocation, MachineType.ANCIENT_FORGE);
+        this.rotation = rotation;
+        spawnDisplayEntity();
+    }
+
+    public int getRotation() {
+        return rotation;
+    }
+
+    private void spawnDisplayEntity() {
+        if (!plugin.getConfigManager().isModelEnabled()) return;
+        
+        Location spawnLoc = getLocation().clone().add(
+            plugin.getConfigManager().getModelOffsetX(),
+            plugin.getConfigManager().getModelOffsetY(),
+            plugin.getConfigManager().getModelOffsetZ()
+        );
+        
+        org.bukkit.World w = spawnLoc.getWorld();
+        if (w == null) return;
+        
+        // Spawn ItemDisplay
+        displayEntity = w.spawn(spawnLoc, org.bukkit.entity.ItemDisplay.class, entity -> {
+            entity.setPersistent(false); // Không lưu vào world disk để tránh rác entity khi restart/reload
+            
+            // Set item display
+            ItemStack displayItem = new ItemStack(plugin.getConfigManager().getModelMaterial());
+            ItemMeta meta = displayItem.getItemMeta();
+            if (meta != null) {
+                meta.setCustomModelData(plugin.getConfigManager().getModelCustomModelData());
+                displayItem.setItemMeta(meta);
+            }
+            entity.setItemStack(displayItem);
+            
+            // Set scale
+            double sx = plugin.getConfigManager().getModelScaleX();
+            double sy = plugin.getConfigManager().getModelScaleY();
+            double sz = plugin.getConfigManager().getModelScaleZ();
+            entity.setTransformation(new org.bukkit.util.Transformation(
+                new org.joml.Vector3f(0f, 0f, 0f),
+                new org.joml.Quaternionf(),
+                new org.joml.Vector3f((float) sx, (float) sy, (float) sz),
+                new org.joml.Quaternionf()
+            ));
+            
+            // Set rotation
+            float yaw = 0f;
+            if (rotation == 90) yaw = 90f;
+            else if (rotation == 180) yaw = 180f;
+            else if (rotation == 270) yaw = 270f;
+            entity.setRotation(yaw, 0f);
+            
+            entity.setInvulnerable(true);
+            entity.setGravity(false);
+            
+            // Đánh dấu tag nhận diện để cleanup khi cần
+            entity.getPersistentDataContainer().set(
+                new org.bukkit.NamespacedKey(plugin, "forge_display"),
+                org.bukkit.persistence.PersistentDataType.STRING,
+                formatLoc(getLocation())
+            );
+        });
+    }
+
+    public void removeDisplayEntity() {
+        if (displayEntity != null && displayEntity.isValid()) {
+            displayEntity.remove();
+            displayEntity = null;
+        } else {
+            // Quét dọn fallback cùng vị trí
+            Location checkLoc = getLocation().clone().add(
+                plugin.getConfigManager().getModelOffsetX(),
+                plugin.getConfigManager().getModelOffsetY(),
+                plugin.getConfigManager().getModelOffsetZ()
+            );
+            if (checkLoc.getWorld() != null) {
+                for (org.bukkit.entity.ItemDisplay display : checkLoc.getWorld().getEntitiesByClass(org.bukkit.entity.ItemDisplay.class)) {
+                    if (display.getPersistentDataContainer().has(new org.bukkit.NamespacedKey(plugin, "forge_display"), org.bukkit.persistence.PersistentDataType.STRING)) {
+                        String locStr = display.getPersistentDataContainer().get(new org.bukkit.NamespacedKey(plugin, "forge_display"), org.bukkit.persistence.PersistentDataType.STRING);
+                        if (formatLoc(getLocation()).equals(locStr)) {
+                            display.remove();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // ── Machine overrides ─────────────────────────────────────

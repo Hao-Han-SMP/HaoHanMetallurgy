@@ -77,6 +77,21 @@ public class ForgeListener implements Listener {
             return;
         }
 
+        // ── Xử lý tương tác đa điểm (Click vào block bất kỳ thuộc cấu trúc lò đang hoạt động) ──
+        AncientForge activeForge = getActiveForgeFromBlock(block);
+        if (activeForge != null) {
+            event.setCancelled(true);
+            Player player = event.getPlayer();
+            if (player.isSneaking()) {
+                player.sendMessage("§8[§6Forge§8] §7Trạng thái: §e" + activeForge.getState()
+                    + " §7| §cTemp: §f" + activeForge.getTemperature() + "°C"
+                    + " §7| §6Fuel: §f" + activeForge.getFuelTicksRemaining() + " ticks");
+            } else {
+                plugin.getGuiManager().open(player, new ForgeGui(plugin, activeForge));
+            }
+            return;
+        }
+
         // ── Xử lý lò Blast Furnace click ─────────────────────
         if (blockType != ForgeStructure.CONTROLLER_MATERIAL) return;
 
@@ -165,7 +180,12 @@ public class ForgeListener implements Listener {
     // ── Internal ──────────────────────────────────────────────
 
     private void activateForge(Player player, Block controllerBlock, Location loc) {
-        AncientForge forge = new AncientForge(plugin, loc);
+        int rotation = ForgeStructure.getValidRotation(loc);
+        if (rotation == -1) {
+            player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc lò rèn không hợp lệ!");
+            return;
+        }
+        AncientForge forge = new AncientForge(plugin, loc, rotation);
 
         if (!plugin.getMachineManager().register(forge)) {
             player.sendMessage("§cKhông thể kích hoạt forge (đã tồn tại?).");
@@ -211,39 +231,57 @@ public class ForgeListener implements Listener {
     }
 
     /**
-     * Khi player phá một structural block, kiểm tra tất cả forge trong bán kính 2
-     * để xem có forge nào bị mất cấu trúc không.
+     * Khi player phá một structural block, kiểm tra xem nó có thuộc cấu trúc lò đang hoạt động không.
      */
     private void invalidateNearbyForges(Block brokenBlock) {
-        Location center = brokenBlock.getLocation();
+        AncientForge forge = getActiveForgeFromBlock(brokenBlock);
+        if (forge == null) return;
 
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dz = -2; dz <= 2; dz++) {
-                Location nearby = center.clone().add(dx, 0, dz);
-                if (!plugin.getMachineManager().exists(nearby)) continue;
+        Location coreLoc = forge.getLocation();
+        plugin.getMachineManager().unregister(coreLoc);
+        Block controller = coreLoc.getBlock();
+        PdcUtil.clearMachineData(plugin, controller);
 
-                if (!ForgeStructure.validate(nearby)) {
-                    var machineOpt = plugin.getMachineManager().get(nearby);
-                    plugin.getMachineManager().unregister(nearby);
-                    Block controller = nearby.getBlock();
-                    PdcUtil.clearMachineData(plugin, controller);
+        dropMachineContents(forge);
 
-                    if (machineOpt.isPresent()) {
-                        dropMachineContents(machineOpt.get());
+        coreLoc.getWorld().getPlayers().stream()
+            .filter(p -> p.getLocation().distanceSquared(coreLoc) < 50 * 50)
+            .forEach(p -> p.sendMessage(
+                "§8[§6Forge§8] §c⚠ Lò Rèn Cổ Đại đã bị phá vỡ cấu trúc!"
+            ));
+
+        plugin.getPluginLogger().info(
+            "AncientForge invalidated (structural break) at " + formatLoc(coreLoc)
+        );
+    }
+
+    private AncientForge getActiveForgeFromBlock(Block clickedBlock) {
+        Location clickedLoc = clickedBlock.getLocation();
+        for (Machine machine : plugin.getMachineManager().getAll()) {
+            if (machine instanceof AncientForge forge) {
+                Location coreLoc = forge.getLocation();
+                if (coreLoc.getBlock().equals(clickedBlock)) {
+                    return forge;
+                }
+                int rotation = forge.getRotation();
+                for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
+                    int rx = offset.dx();
+                    int rz = offset.dz();
+                    if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
+                    else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+                    else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+                    int bx = coreLoc.getBlockX() + rx;
+                    int by = coreLoc.getBlockY() + offset.dy();
+                    int bz = coreLoc.getBlockZ() + rz;
+
+                    if (clickedLoc.getBlockX() == bx && clickedLoc.getBlockY() == by && clickedLoc.getBlockZ() == bz) {
+                        return forge;
                     }
-
-                    nearby.getWorld().getPlayers().stream()
-                        .filter(p -> p.getLocation().distanceSquared(nearby) < 50 * 50)
-                        .forEach(p -> p.sendMessage(
-                            "§8[§6Forge§8] §c⚠ Forge lân cận bị phá vỡ cấu trúc!"
-                        ));
-
-                    plugin.getPluginLogger().info(
-                        "AncientForge invalidated (structural break) at " + formatLoc(nearby)
-                    );
                 }
             }
         }
+        return null;
     }
 
     private String formatLoc(Location l) {

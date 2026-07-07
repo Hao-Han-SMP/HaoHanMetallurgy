@@ -45,6 +45,9 @@ public class MachineManager {
         Machine removed = machines.remove(location);
         if (removed != null) {
             plugin.getPluginLogger().debug("Unregistered machine at " + location);
+            if (removed instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+                forge.removeDisplayEntity();
+            }
         }
         return removed;
     }
@@ -95,7 +98,12 @@ public class MachineManager {
      * Pause tất cả machines đang chạy để serialize đúng state.
      */
     public void pauseAll() {
-        machines.values().forEach(Machine::pause);
-        plugin.getPluginLogger().info("Paused " + machines.size() + " machine(s) for shutdown.");
+        machines.values().forEach(machine -> {
+            machine.pause();
+            if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+                forge.removeDisplayEntity();
+            }
+        });
+        plugin.getPluginLogger().info("Paused " + machines.size() + " machine(s) for shutdown and cleared display models.");
     }
 }

@@ -55,16 +55,37 @@ public class ForgePreview {
 
         List<BlockDisplay> displays = new ArrayList<>();
 
-        for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
-            if (!offset.matchesAt(controllerLoc)) {
-                // Block này còn thiếu → hiển thị ghost
-                Location blockLoc = controllerLoc.clone().add(
-                    offset.dx(), offset.dy(), offset.dz()
-                );
-                BlockDisplay display = spawnGhost(player, blockLoc);
-                if (display != null) {
-                    displays.add(display);
+        // Tìm rotation tốt nhất (thiếu ít block nhất) để hiện ghost blocks
+        int bestRot = 0;
+        int minMissing = Integer.MAX_VALUE;
+        List<ForgeStructure.BlockOffset> bestMissingList = new ArrayList<>();
+
+        for (int rot : List.of(0, 90, 180, 270)) {
+            List<ForgeStructure.BlockOffset> missing = new ArrayList<>();
+            for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
+                if (!offset.matchesAt(controllerLoc, rot)) {
+                    missing.add(offset);
                 }
+            }
+            if (missing.size() < minMissing) {
+                minMissing = missing.size();
+                bestRot = rot;
+                bestMissingList = missing;
+            }
+        }
+
+        final int finalRot = bestRot;
+        for (ForgeStructure.BlockOffset offset : bestMissingList) {
+            int rx = offset.dx();
+            int rz = offset.dz();
+            if (finalRot == 90) { rx = -offset.dz(); rz = offset.dx(); }
+            else if (finalRot == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+            else if (finalRot == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+            Location blockLoc = controllerLoc.clone().add(rx, offset.dy(), rz);
+            BlockDisplay display = spawnGhost(player, blockLoc);
+            if (display != null) {
+                displays.add(display);
             }
         }
 

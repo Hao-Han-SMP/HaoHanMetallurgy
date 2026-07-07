@@ -35,6 +35,13 @@ public class ConfigManager {
     private Map<Material, Integer> fuelLimits;
     private Map<Material, Integer> coolants;
 
+    // Forge Model Config (Phase 5.5)
+    private boolean modelEnabled;
+    private Material modelMaterial;
+    private int modelCustomModelData;
+    private double modelScaleX, modelScaleY, modelScaleZ;
+    private double modelOffsetX, modelOffsetY, modelOffsetZ;
+
     public ConfigManager(HaoHanMetallurgy plugin) {
         this.plugin = plugin;
         plugin.saveDefaultConfig();
@@ -64,6 +71,16 @@ public class ConfigManager {
 
     public Map<Material, Integer> getFuelLimits() { return fuelLimits; }
     public Map<Material, Integer> getCoolants()   { return coolants; }
+
+    public boolean isModelEnabled()          { return modelEnabled; }
+    public Material getModelMaterial()        { return modelMaterial; }
+    public int getModelCustomModelData()     { return modelCustomModelData; }
+    public double getModelScaleX()           { return modelScaleX; }
+    public double getModelScaleY()           { return modelScaleY; }
+    public double getModelScaleZ()           { return modelScaleZ; }
+    public double getModelOffsetX()          { return modelOffsetX; }
+    public double getModelOffsetY()          { return modelOffsetY; }
+    public double getModelOffsetZ()          { return modelOffsetZ; }
 
     /**
      * Trả về số ticks fuel của material này cung cấp.
@@ -110,6 +127,23 @@ public class ConfigManager {
         loadFuelValues();
         loadFuelLimits();
         loadCoolants();
+        loadModelConfig();
+    }
+
+    private void loadModelConfig() {
+        modelEnabled = config.getBoolean("forge-model.enabled", false);
+        String matName = config.getString("forge-model.material", "PAPER");
+        modelMaterial = Material.matchMaterial(matName);
+        if (modelMaterial == null) {
+            modelMaterial = Material.PAPER;
+        }
+        modelCustomModelData = config.getInt("forge-model.custom-model-data", 0);
+        modelScaleX = config.getDouble("forge-model.scale.x", 1.0);
+        modelScaleY = config.getDouble("forge-model.scale.y", 1.0);
+        modelScaleZ = config.getDouble("forge-model.scale.z", 1.0);
+        modelOffsetX = config.getDouble("forge-model.offset.x", 0.5);
+        modelOffsetY = config.getDouble("forge-model.offset.y", 0.5);
+        modelOffsetZ = config.getDouble("forge-model.offset.z", 0.5);
     }
 
     private void loadMiningRequirements() {

@@ -47,6 +47,29 @@ public class AncientForge extends Machine {
         return originalBlocks;
     }
 
+    public void playActivationEffects() {
+        Location center = getLocation().clone().add(0.5, 1.1, 0.5);
+        org.bukkit.World world = center.getWorld();
+        if (world == null) return;
+
+        world.spawnParticle(org.bukkit.Particle.FLAME, center, 24, 0.55, 0.35, 0.55, 0.05);
+        world.spawnParticle(org.bukkit.Particle.LAVA, center, 8, 0.35, 0.25, 0.35, 0.04);
+        world.spawnParticle(org.bukkit.Particle.CAMPFIRE_COSY_SMOKE, center.clone().add(0, 0.8, 0), 6, 0.35, 0.2, 0.35, 0.02);
+        world.playSound(center, org.bukkit.Sound.BLOCK_BLASTFURNACE_FIRE_CRACKLE, 1.0f, 0.85f);
+        world.playSound(center, org.bukkit.Sound.BLOCK_ANVIL_PLACE, 0.45f, 0.7f);
+    }
+
+    public void playDeactivationEffects() {
+        Location center = getLocation().clone().add(0.5, 1.0, 0.5);
+        org.bukkit.World world = center.getWorld();
+        if (world == null) return;
+
+        world.spawnParticle(org.bukkit.Particle.SMOKE, center, 18, 0.6, 0.35, 0.6, 0.04);
+        world.spawnParticle(org.bukkit.Particle.ASH, center, 16, 0.75, 0.45, 0.75, 0.02);
+        world.playSound(center, org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 0.85f);
+        world.playSound(center, org.bukkit.Sound.BLOCK_CHAIN_BREAK, 0.55f, 0.75f);
+    }
+
     public void refreshDisplayEntity() {
         removeDisplayEntity();
         spawnDisplayEntity();
@@ -164,6 +187,13 @@ public class AncientForge extends Machine {
     @Override
     protected void onRecipeComplete(MetallurgyRecipe recipe) {
         ItemStack result = buildOutputItem(recipe.getOutput());
+        Location center = getLocation().clone().add(0.5, 1.2, 0.5);
+        if (center.getWorld() != null) {
+            center.getWorld().spawnParticle(org.bukkit.Particle.FLAME, center, 16, 0.35, 0.25, 0.35, 0.04);
+            center.getWorld().spawnParticle(org.bukkit.Particle.LAVA, center, 6, 0.2, 0.2, 0.2, 0.03);
+            center.getWorld().playSound(center, org.bukkit.Sound.BLOCK_ANVIL_USE, 0.7f, 1.25f);
+            center.getWorld().playSound(center, org.bukkit.Sound.BLOCK_BLASTFURNACE_FIRE_CRACKLE, 0.8f, 1.1f);
+        }
 
         // Đặt vật phẩm nung thành công vào ô Output (slot 15) của máy
         ItemStack existing = inventory.getItem(15);
@@ -202,6 +232,22 @@ public class AncientForge extends Machine {
      */
     @Override
     protected void onTick() {
+        Location warmLoc = getLocation();
+        org.bukkit.World warmWorld = warmLoc.getWorld();
+        if (warmWorld != null && getTemperature() > 0) {
+            Location fireGlow = warmLoc.clone().add(0.5, 0.75, 0.5);
+            Location chimneyGlow = warmLoc.clone().add(0.5, 3.2, 0.5);
+            if (random.nextInt(4) == 0) {
+                warmWorld.spawnParticle(org.bukkit.Particle.SMALL_FLAME, fireGlow, 2, 0.25, 0.15, 0.25, 0.02);
+            }
+            if (random.nextInt(5) == 0) {
+                warmWorld.spawnParticle(org.bukkit.Particle.SMOKE, chimneyGlow, 1, 0.16, 0.1, 0.16, 0.02);
+            }
+            if (random.nextInt(18) == 0) {
+                warmWorld.playSound(fireGlow, org.bukkit.Sound.BLOCK_BLASTFURNACE_FIRE_CRACKLE, 0.45f, 0.9f + random.nextFloat() * 0.25f);
+            }
+        }
+
         if (getState() == MachineState.WORKING) {
             Location loc = getLocation();
             org.bukkit.World world = loc.getWorld();
@@ -235,7 +281,7 @@ public class AncientForge extends Machine {
 
                 // 3. Âm thanh tí tách và sôi ục ục của dung nham/lửa nung
                 if (random.nextInt(12) == 0) { // Lửa lò tí tách
-                    world.playSound(fireSource, org.bukkit.Sound.BLOCK_FURNACE_FIRE_CRACKLE, 0.8f, 1.0f);
+                    world.playSound(fireSource, org.bukkit.Sound.BLOCK_BLASTFURNACE_FIRE_CRACKLE, 0.8f, 1.0f);
                 }
                 if (random.nextInt(25) == 0) { // Bong bóng dung nham nổ tí tách
                     world.playSound(fireSource, org.bukkit.Sound.BLOCK_LAVA_POP, 0.7f, 1.2f);

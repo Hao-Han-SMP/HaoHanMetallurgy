@@ -26,6 +26,8 @@ public class ConfigManager {
     private int tempFallPerTick;
     private int tempMax;
     private String forgeTitle;
+    private boolean failEnabled;
+    private double failBaseChance;
 
     // Progression config cache
     private Material emberOreMaterial;
@@ -66,6 +68,8 @@ public class ConfigManager {
     public int getTempFallPerTick()   { return tempFallPerTick; }
     public int getTempMax()           { return tempMax; }
     public String getForgeTitle()     { return forgeTitle; }
+    public boolean isFailEnabled()    { return failEnabled; }
+    public double getFailBaseChance() { return failBaseChance; }
 
     public Material getEmberOreMaterial() { return emberOreMaterial; }
     public Material getSoulOreMaterial()  { return soulOreMaterial; }
@@ -110,6 +114,8 @@ public class ConfigManager {
         tempMax          = config.getInt("temperature.max", 2000);
         forgeTitle       = org.bukkit.ChatColor.translateAlternateColorCodes('&',
             config.getString("gui.forge-title", "&8⚒ &6Ancient Forge"));
+        failEnabled      = config.getBoolean("fail.enabled", false);
+        failBaseChance   = config.getDouble("fail.base-chance", 0.05);
 
         // Load progression configs
         String emberOreName = config.getString("progression.ores.ember-ore", "COPPER_ORE");

@@ -21,6 +21,7 @@ public final class MetallurgyRecipe {
     private final int minTemperature;
     private final int maxTemperature;
     private final String requiredAdvancement;
+    private final double failChance;
 
     public MetallurgyRecipe(String id,
                             String machineType,
@@ -31,6 +32,19 @@ public final class MetallurgyRecipe {
                             int minTemperature,
                             int maxTemperature,
                             String requiredAdvancement) {
+        this(id, machineType, inputs, output, fuelCost, timeSeconds, minTemperature, maxTemperature, requiredAdvancement, 0.0);
+    }
+
+    public MetallurgyRecipe(String id,
+                            String machineType,
+                            List<Ingredient> inputs,
+                            OutputItem output,
+                            int fuelCost,
+                            int timeSeconds,
+                            int minTemperature,
+                            int maxTemperature,
+                            String requiredAdvancement,
+                            double failChance) {
         this.id = id;
         this.machineType = machineType;
         this.inputs = List.copyOf(inputs);
@@ -40,6 +54,7 @@ public final class MetallurgyRecipe {
         this.minTemperature = minTemperature;
         this.maxTemperature = maxTemperature;
         this.requiredAdvancement = requiredAdvancement;
+        this.failChance = failChance;
     }
 
     // ── Getters ────────────────────────────────────────────────
@@ -52,6 +67,7 @@ public final class MetallurgyRecipe {
     public int getMinTemperature()   { return minTemperature; }
     public int getMaxTemperature()   { return maxTemperature; }
     public String getRequiredAdvancement() { return requiredAdvancement; }
+    public double getFailChance()    { return failChance; }
 
     @Override
     public String toString() {

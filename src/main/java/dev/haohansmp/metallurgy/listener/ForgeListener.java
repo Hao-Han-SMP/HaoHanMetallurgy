@@ -16,10 +16,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Xử lý tương tác của player với Ancient Forge:
@@ -33,6 +41,8 @@ public class ForgeListener implements Listener {
 
     private final HaoHanMetallurgy plugin;
     private final ForgePreview preview;
+    private final Map<UUID, BukkitTask> forgeMiningTasks = new HashMap<>();
+    private static final int BEACON_BREAK_TICKS = 90;
 
     public ForgeListener(HaoHanMetallurgy plugin) {
         this.plugin = plugin;
@@ -153,6 +163,23 @@ public class ForgeListener implements Listener {
     // ── Block Break ───────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockDamage(BlockDamageEvent event) {
+        Block block = event.getBlock();
+        if (block.getType() != Material.BARRIER) return;
+
+        AncientForge activeForge = getActiveForgeFromBlock(block);
+        if (activeForge == null) return;
+
+        event.setInstaBreak(false);
+        beginForgeMining(activeForge, block, event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockDamageAbort(BlockDamageAbortEvent event) {
+        cancelForgeMining(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         Location loc = block.getLocation();
@@ -248,6 +275,7 @@ public class ForgeListener implements Listener {
         }
 
         player.sendMessage("§8[§6Forge§8] §a✔ Kích hoạt Lò Rèn Cổ Đại thành công! Mô hình 3D đã được thiết lập.");
+        forge.playActivationEffects();
         plugin.getMachineManager().saveAll();
         plugin.getPluginLogger().info(
             "AncientForge activated at " + formatLoc(loc) + " by " + player.getName()
@@ -255,6 +283,69 @@ public class ForgeListener implements Listener {
 
         // Mở GUI ngay lập tức
         plugin.getGuiManager().open(player, new ForgeGui(plugin, forge));
+    }
+
+    private void beginForgeMining(AncientForge forge, Block block, Player player) {
+        cancelForgeMining(player);
+
+        Location blockLoc = block.getLocation();
+        Location coreLoc = forge.getLocation();
+        UUID playerId = player.getUniqueId();
+
+        BukkitTask task = new BukkitRunnable() {
+            private int elapsed = 0;
+
+            @Override
+            public void run() {
+                if (!player.isOnline()
+                    || !plugin.getMachineManager().exists(coreLoc)
+                    || !block.getWorld().equals(player.getWorld())
+                    || player.getLocation().distanceSquared(blockLoc.clone().add(0.5, 0.5, 0.5)) > 36) {
+                    forgeMiningTasks.remove(playerId);
+                    player.sendActionBar("");
+                    cancel();
+                    return;
+                }
+
+                elapsed++;
+                if (elapsed % 10 == 0) {
+                    float progress = Math.min(1.0f, elapsed / (float) BEACON_BREAK_TICKS);
+                    player.sendActionBar("§6Đang phá Lò Rèn Cổ Đại... §e" + Math.round(progress * 100) + "%");
+                    player.playSound(blockLoc, Sound.BLOCK_STONE_HIT, 0.35f, 0.75f);
+                }
+
+                if (elapsed >= BEACON_BREAK_TICKS) {
+                    forgeMiningTasks.remove(playerId);
+                    dismantleActiveForge(forge, block, player);
+                    player.playSound(blockLoc, Sound.BLOCK_BEACON_DEACTIVATE, 0.8f, 0.8f);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 1L, 1L);
+
+        forgeMiningTasks.put(playerId, task);
+    }
+
+    private void cancelForgeMining(Player player) {
+        BukkitTask task = forgeMiningTasks.remove(player.getUniqueId());
+        if (task != null) {
+            task.cancel();
+            player.sendActionBar("");
+        }
+    }
+
+    private void dismantleActiveForge(AncientForge forge, Block brokenBlock, Player player) {
+        Location coreLoc = forge.getLocation();
+        forge.playDeactivationEffects();
+        plugin.getMachineManager().unregister(coreLoc);
+
+        restoreOriginalBlocks(forge, brokenBlock);
+        plugin.getMachineManager().saveAll();
+
+        player.sendMessage("§8[§6Forge§8] §eLò Rèn Cổ Đại đã bị hủy kích hoạt. Các vật phẩm đã rơi ra.");
+        plugin.getPluginLogger().info(
+            "AncientForge deactivated due to player break at " + formatLoc(coreLoc) + " by " + player.getName()
+        );
     }
 
     private void deactivateForge(Location loc, Block block, Player player) {

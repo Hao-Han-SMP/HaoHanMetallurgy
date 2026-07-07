@@ -40,8 +40,12 @@ public class RecipeLoader {
         File recipeDir = new File(plugin.getDataFolder(), "recipes");
         if (!recipeDir.exists()) {
             recipeDir.mkdirs();
-            // Copy example từ resources
+            // Copy default recipes từ resources
             plugin.saveResource("recipes/example_forge.json", false);
+            plugin.saveResource("recipes/raw_iron_smelting.json", false);
+            plugin.saveResource("recipes/raw_copper_smelting.json", false);
+            plugin.saveResource("recipes/raw_gold_smelting.json", false);
+            plugin.saveResource("recipes/netherite_ingot_smelting.json", false);
         }
 
         File[] files;
@@ -146,7 +150,24 @@ public class RecipeLoader {
         int maxTemp      = obj.has("max_temperature") ? obj.get("max_temperature").getAsInt() : (minTemp + 400);
         String reqAdv    = obj.has("required_advancement") ? obj.get("required_advancement").getAsString() : null;
 
-        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp, maxTemp, reqAdv);
+        double failChance = 0.0;
+        if (obj.has("fail_chance")) {
+            failChance = obj.get("fail_chance").getAsDouble();
+        } else {
+            // Tự động tính toán theo quy tắc vật chất
+            Material m = output.material();
+            String idStr = id.toLowerCase();
+            if (m != null) {
+                String matName = m.name();
+                if (matName.contains("GOLD")) {
+                    failChance = 0.0;
+                } else if (matName.contains("IRON") || matName.contains("COPPER") || matName.contains("NETHERITE") || idStr.contains("steel")) {
+                    failChance = plugin.getConfigManager().getFailBaseChance();
+                }
+            }
+        }
+
+        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp, maxTemp, reqAdv, failChance);
     }
 
     private Material requireMaterial(String name, File file) {

@@ -1,0 +1,15 @@
+{
+  "id": "ancient_forge/iron_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "material": "RAW_IRON", "amount": 1 }
+  ],
+  "output": {
+    "material": "IRON_INGOT",
+    "amount": 1
+  },
+  "fuel_cost": 100,
+  "time_seconds": 10,
+  "min_temperature": 600,
+  "fail_chance": 0.1
+}

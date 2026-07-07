@@ -81,8 +81,9 @@ progression:
 
 # ── Fail rate (Phase 5 — để trống ở Phase 1) ─────────────────
 fail:
-  enabled: false
-  base-chance: 0.05   # 5% fail mặc định
+  enabled: true
+  base-chance: 0.1   # 10% fail mặc định
+
 
 # ── Mô hình 3D lò rèn (Phase 5.5) ──────────────────────────────
 forge-model:

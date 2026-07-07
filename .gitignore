@@ -2,3 +2,4 @@
 /.idea/
 /*.iml
 /build_and_start.ps1
+/build.ps1

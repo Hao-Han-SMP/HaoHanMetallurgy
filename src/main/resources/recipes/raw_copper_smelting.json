@@ -1,0 +1,15 @@
+{
+  "id": "ancient_forge/copper_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "material": "RAW_COPPER", "amount": 1 }
+  ],
+  "output": {
+    "material": "COPPER_INGOT",
+    "amount": 1
+  },
+  "fuel_cost": 100,
+  "time_seconds": 10,
+  "min_temperature": 500,
+  "fail_chance": 0.1
+}

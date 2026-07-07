@@ -1,0 +1,17 @@
+{
+  "id": "ancient_forge/netherite_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "material": "NETHERITE_SCRAP", "amount": 4 },
+    { "material": "GOLD_INGOT", "amount": 4 }
+  ],
+  "output": {
+    "material": "NETHERITE_INGOT",
+    "amount": 1
+  },
+  "fuel_cost": 600,
+  "time_seconds": 20,
+  "min_temperature": 1200,
+  "fail_chance": 0.2,
+  "required_advancement": "haohansmp:metallurgy/find_ancient_debris"
+}

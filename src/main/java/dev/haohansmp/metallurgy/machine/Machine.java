@@ -10,13 +10,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
-/**
- * Abstract base class đại diện cho một máy metallurgy đang hoạt động
- * tại một Location cụ thể trong thế giới.
- *
- * Mỗi loại máy (AncientForge, ...) extend class này và override
- * các method lifecycle để thêm logic riêng.
- */
 public abstract class Machine {
 
     protected final HaoHanMetallurgy plugin;
@@ -49,7 +42,7 @@ public abstract class Machine {
         this.plugin = plugin;
         this.location = location.clone();
         this.type = type;
-        
+
         // Khởi tạo inventory cố định cho máy này (27 slots)
         String title = plugin.getConfigManager().getForgeTitle();
         this.inventory = Bukkit.createInventory(null, 27, title);
@@ -70,22 +63,24 @@ public abstract class Machine {
     /**
      * Hook để subclass thêm logic tick riêng (ví dụ: particle effects).
      */
-    protected void onTick() {}
+    protected void onTick() {
+    }
 
     /** Bắt đầu recipe nếu đang IDLE và điều kiện đủ. */
     public boolean startRecipe(MetallurgyRecipe recipe) {
-        if (state != MachineState.IDLE) return false;
-        if (temperature < recipe.getMinTemperature()) return false;
+        if (state != MachineState.IDLE)
+            return false;
+        if (temperature < recipe.getMinTemperature())
+            return false;
 
         this.currentRecipe = recipe;
         this.progressTicks = 0;
-        // Giảm thời gian rèn đi 1 nửa (time-multiplier = 0.5)
-        this.totalTicks = (recipe.getTimeSeconds() * 20) / 2;
+        // Giảm thời gian rèn xuống 1 phần 5 (time-multiplier = 0.2) để nung cực nhanh
+        this.totalTicks = Math.max(1, (recipe.getTimeSeconds() * 20) / 5);
         this.state = MachineState.WORKING;
 
         plugin.getPluginLogger().debug(
-            "Machine at " + formatLocation() + " started recipe: " + recipe.getId()
-        );
+                "Machine at " + formatLocation() + " started recipe: " + recipe.getId());
         return true;
     }
 
@@ -125,27 +120,52 @@ public abstract class Machine {
      */
     public Map<String, Object> serialize() {
         return Map.of(
-            "type", type.name(),
-            "state", state.name(),
-            "recipe", currentRecipe != null ? currentRecipe.getId() : "",
-            "progress", progressTicks,
-            "total", totalTicks,
-            "temperature", temperature,
-            "fuel", fuelTicksRemaining
-        );
+                "type", type.name(),
+                "state", state.name(),
+                "recipe", currentRecipe != null ? currentRecipe.getId() : "",
+                "progress", progressTicks,
+                "total", totalTicks,
+                "temperature", temperature,
+                "fuel", fuelTicksRemaining);
     }
 
     // ── Getters ───────────────────────────────────────────────
 
-    public Location getLocation()          { return location.clone(); }
-    public MachineType getType()           { return type; }
-    public MachineState getState()         { return state; }
-    public MetallurgyRecipe getCurrentRecipe() { return currentRecipe; }
-    public int getProgressTicks()          { return progressTicks; }
-    public int getTotalTicks()             { return totalTicks; }
-    public int getTemperature()            { return temperature; }
-    public int getFuelTicksRemaining()     { return fuelTicksRemaining; }
-    public Inventory getInventory()        { return inventory; }
+    public Location getLocation() {
+        return location.clone();
+    }
+
+    public MachineType getType() {
+        return type;
+    }
+
+    public MachineState getState() {
+        return state;
+    }
+
+    public MetallurgyRecipe getCurrentRecipe() {
+        return currentRecipe;
+    }
+
+    public int getProgressTicks() {
+        return progressTicks;
+    }
+
+    public int getTotalTicks() {
+        return totalTicks;
+    }
+
+    public int getTemperature() {
+        return temperature;
+    }
+
+    public int getFuelTicksRemaining() {
+        return fuelTicksRemaining;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
 
     /** Tiến trình 0.0 → 1.0 */
     public float getProgressPercent() {
@@ -165,7 +185,8 @@ public abstract class Machine {
         this.temperature = Math.max(0, this.temperature - amount);
         // Hiển thị hiệu ứng xì khói lạnh khi hạ nhiệt
         if (location.getWorld() != null) {
-            location.getWorld().spawnParticle(org.bukkit.Particle.SNOWFLAKE, location.clone().add(0.5, 1.2, 0.5), 10, 0.2, 0.2, 0.2, 0.05);
+            location.getWorld().spawnParticle(org.bukkit.Particle.SNOWFLAKE, location.clone().add(0.5, 1.2, 0.5), 10,
+                    0.2, 0.2, 0.2, 0.05);
             location.getWorld().playSound(location, org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 0.5f, 1.5f);
         }
     }
@@ -173,14 +194,16 @@ public abstract class Machine {
     public void boostTemperature(int amount) {
         int maxTemp = plugin.getConfigManager().getTempMax();
         int currentLimit = Math.min(activeFuelLimit, maxTemp);
-        
-        // Thổi khí cho phép nhiệt tăng vượt giới hạn nhiên liệu 150°C nhưng không quá maxTemp
+
+        // Thổi khí cho phép nhiệt tăng vượt giới hạn nhiên liệu 150°C nhưng không quá
+        // maxTemp
         int cap = Math.min(currentLimit + 150, maxTemp);
         this.temperature = Math.min(cap, this.temperature + amount);
 
         // Hiển thị hiệu ứng gió/khói bay khi thổi khí
         if (location.getWorld() != null) {
-            location.getWorld().spawnParticle(org.bukkit.Particle.CLOUD, location.clone().add(0.5, 1.2, 0.5), 8, 0.1, 0.1, 0.1, 0.02);
+            location.getWorld().spawnParticle(org.bukkit.Particle.CLOUD, location.clone().add(0.5, 1.2, 0.5), 8, 0.1,
+                    0.1, 0.1, 0.02);
             location.getWorld().playSound(location, org.bukkit.Sound.ENTITY_WIND_CHARGE_WIND_BURST, 0.6f, 1.2f);
         }
     }
@@ -212,26 +235,25 @@ public abstract class Machine {
         org.bukkit.World w = location.getWorld();
         if (w != null) {
             int[][] ringOffsets = {
-                {-1, 0, -1}, {0, 0, -1}, {1, 0, -1},
-                {-1, 0, 0},             {1, 0, 0},
-                {-1, 0, 1},  {0, 0, 1},  {1, 0, 1}
+                    { -1, 0, -1 }, { 0, 0, -1 }, { 1, 0, -1 },
+                    { -1, 0, 0 }, { 1, 0, 0 },
+                    { -1, 0, 1 }, { 0, 0, 1 }, { 1, 0, 1 }
             };
             for (int[] offset : ringOffsets) {
                 Material type = w.getBlockAt(
-                    location.getBlockX() + offset[0],
-                    location.getBlockY() + offset[1],
-                    location.getBlockZ() + offset[2]
-                ).getType();
+                        location.getBlockX() + offset[0],
+                        location.getBlockY() + offset[1],
+                        location.getBlockZ() + offset[2]).getType();
 
-                if (type == Material.NETHER_BRICKS || type == Material.RED_NETHER_BRICKS 
-                    || type == Material.MAGMA_BLOCK || type == Material.OBSIDIAN) {
+                if (type == Material.NETHER_BRICKS || type == Material.RED_NETHER_BRICKS
+                        || type == Material.MAGMA_BLOCK || type == Material.OBSIDIAN) {
                     insulators++;
-                } else if (type == Material.IRON_BLOCK || type == Material.COPPER_BLOCK 
-                    || type == Material.GOLD_BLOCK || type == Material.EXPOSED_COPPER 
-                    || type == Material.WEATHERED_COPPER || type == Material.OXIDIZED_COPPER) {
+                } else if (type == Material.IRON_BLOCK || type == Material.COPPER_BLOCK
+                        || type == Material.GOLD_BLOCK || type == Material.EXPOSED_COPPER
+                        || type == Material.WEATHERED_COPPER || type == Material.OXIDIZED_COPPER) {
                     conductors++;
-                } else if (type == Material.PACKED_ICE || type == Material.BLUE_ICE 
-                    || type == Material.ICE) {
+                } else if (type == Material.PACKED_ICE || type == Material.BLUE_ICE
+                        || type == Material.ICE) {
                     coolers++;
                 }
             }
@@ -265,7 +287,7 @@ public abstract class Machine {
 
         // 3. Tính toán tốc độ tăng/giảm cuối cùng
         int finalRise = baseRise + conductors * 2;
-        int finalFall = Math.max(0, baseFall + biomeFallMod + rainFallMod + coolers * 2 - (int)(insulators * 0.2));
+        int finalFall = Math.max(0, baseFall + biomeFallMod + rainFallMod + coolers * 2 - (int) (insulators * 0.2));
 
         // 4. Giới hạn nhiệt độ tối đa theo Nhiên liệu hoạt động và khối làm mát
         int currentLimit = Math.min(activeFuelLimit, maxTemp - coolers * 100);
@@ -284,7 +306,8 @@ public abstract class Machine {
     }
 
     private void processRecipe() {
-        if (state != MachineState.WORKING || currentRecipe == null) return;
+        if (state != MachineState.WORKING || currentRecipe == null)
+            return;
 
         // Kiểm tra nhiệt độ tối thiểu
         if (temperature < currentRecipe.getMinTemperature()) {
@@ -295,20 +318,29 @@ public abstract class Machine {
 
         // Kiểm tra nhiệt độ tối đa (Quá nhiệt -> Hỏng quặng thành Xỉ)
         if (temperature > currentRecipe.getMaxTemperature()) {
-            ruinRecipe();
+            ruinRecipe("§c⚠ Lò quá nhiệt! Nguyên liệu của bạn đã bị thiêu cháy thành xỉ.", "§c⚠ Lò quá nhiệt! Quặng đã bị cháy hỏng!");
             return;
         }
 
         progressTicks++;
 
         if (progressTicks >= totalTicks) {
+            // Kiểm tra tỉ lệ luyện kim thất bại (chỉ khi được bật cấu hình và recipe có tỷ lệ thất bại)
+            if (plugin.getConfigManager().isFailEnabled() && currentRecipe.getFailChance() > 0.0) {
+                double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+                if (rand < currentRecipe.getFailChance()) {
+                    ruinRecipe("§c⚠ Luyện kim thất bại! Nguyên liệu đã hóa thành xỉ thải.", "§c⚠ Luyện kim thất bại!");
+                    return;
+                }
+            }
+
             onRecipeComplete(currentRecipe);
             reset();
         }
     }
 
-    private void ruinRecipe() {
-        plugin.getPluginLogger().info("Machine at " + formatLocation() + " overheated! Recipe ruined.");
+    private void ruinRecipe(String chatMessage, String actionBarMessage) {
+        plugin.getPluginLogger().info("Machine at " + formatLocation() + " failed: " + chatMessage);
 
         // Phát âm thanh cháy xèo xèo tắt lửa
         if (location.getWorld() != null) {
@@ -322,9 +354,8 @@ public abstract class Machine {
         if (meta != null) {
             meta.setDisplayName("§8Slag (Xỉ Thải)");
             meta.setLore(java.util.List.of(
-                "§7Sản phẩm hỏng do lò quá nhiệt!",
-                "§7Hãy giữ nhiệt độ ổn định trong khoảng an toàn."
-            ));
+                    "§7Sản phẩm hỏng trong quá trình luyện kim!",
+                    "§7Hãy cố giữ nhiệt độ ổn định hoặc kiểm tra chất lượng quặng."));
             slag.setItemMeta(meta);
         }
 
@@ -332,7 +363,8 @@ public abstract class Machine {
         ItemStack existing = inventory.getItem(15);
         if (existing == null || existing.getType() == Material.AIR) {
             inventory.setItem(15, slag);
-        } else if (existing.getType() == Material.CHARCOAL && existing.hasItemMeta() && "§8Slag (Xỉ Thải)".equals(existing.getItemMeta().getDisplayName())) {
+        } else if (existing.getType() == Material.CHARCOAL && existing.hasItemMeta()
+                && "§8Slag (Xỉ Thải)".equals(existing.getItemMeta().getDisplayName())) {
             existing.setAmount(Math.min(existing.getAmount() + 1, existing.getMaxStackSize()));
         } else {
             if (location.getWorld() != null) {
@@ -343,11 +375,11 @@ public abstract class Machine {
         // Gửi cảnh báo người chơi lân cận
         if (location.getWorld() != null) {
             location.getWorld().getPlayers().stream()
-                .filter(p -> p.getLocation().distanceSquared(location) < 15 * 15)
-                .forEach(p -> {
-                    p.sendMessage("§8[§6Forge§8] §c⚠ Lò quá nhiệt! Nguyên liệu của bạn đã bị thiêu cháy thành xỉ.");
-                    p.sendActionBar("§c⚠ Lò quá nhiệt! Quặng đã bị cháy hỏng!");
-                });
+                    .filter(p -> p.getLocation().distanceSquared(location) < 15 * 15)
+                    .forEach(p -> {
+                        p.sendMessage("§8[§6Forge§8] " + chatMessage);
+                        p.sendActionBar(actionBarMessage);
+                    });
         }
 
         reset();

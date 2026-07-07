@@ -6,6 +6,8 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Transformation;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,23 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Hiển thị ghost blocks (BlockDisplay entity) cho player thấy vị trí
- * các block còn thiếu trong cấu trúc Ancient Forge.
- *
- * Ghost block:
- *   - Material: RED_STAINED_GLASS (mờ, màu đỏ → "block còn thiếu")
- *   - Glow: true
- *   - Chỉ hiển thị cho player đã gọi showMissing() (setVisibleByDefault=false)
- *   - Tự xóa sau 5 giây (100 ticks)
- *   - Không lưu vào disk (setPersistent=false)
- *
- * Yêu cầu: Paper API 1.19.4+ (BlockDisplay entity).
- */
 public class ForgePreview {
 
     private static final long DISPLAY_DURATION_TICKS = 100L; // 5 giây
-    private static final Material GHOST_MATERIAL = Material.RED_STAINED_GLASS;
 
     private final HaoHanMetallurgy plugin;
 
@@ -78,31 +66,38 @@ public class ForgePreview {
         for (ForgeStructure.BlockOffset offset : bestMissingList) {
             int rx = offset.dx();
             int rz = offset.dz();
-            if (finalRot == 90) { rx = -offset.dz(); rz = offset.dx(); }
-            else if (finalRot == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-            else if (finalRot == 270) { rx = offset.dz(); rz = -offset.dx(); }
+            if (finalRot == 90) {
+                rx = -offset.dz();
+                rz = offset.dx();
+            } else if (finalRot == 180) {
+                rx = -offset.dx();
+                rz = -offset.dz();
+            } else if (finalRot == 270) {
+                rx = offset.dz();
+                rz = -offset.dx();
+            }
 
             Location blockLoc = controllerLoc.clone().add(rx, offset.dy(), rz);
-            BlockDisplay display = spawnGhost(player, blockLoc);
+            BlockDisplay display = spawnGhost(player, blockLoc, offset.material());
             if (display != null) {
                 displays.add(display);
             }
         }
 
-        if (displays.isEmpty()) return;
+        if (displays.isEmpty())
+            return;
 
         activeDisplays.put(player.getUniqueId(), displays);
 
         int count = displays.size();
         player.sendMessage("§8[§6Forge§8] §c" + count + " §7block còn thiếu "
-            + "§8(ghost blocks đỏ hiển thị " + (DISPLAY_DURATION_TICKS / 20) + "s).");
+                + "§8(hiển thị preview " + (DISPLAY_DURATION_TICKS / 20) + "s).");
 
-        // Auto-remove sau N giây
+        // Auto-remove sau N giây (bắt đầu quá trình fade out)
         plugin.getServer().getScheduler().runTaskLater(
-            plugin,
-            () -> clearFor(player),
-            DISPLAY_DURATION_TICKS
-        );
+                plugin,
+                () -> fadeOutAndClearFor(player),
+                DISPLAY_DURATION_TICKS);
     }
 
     /**
@@ -110,13 +105,50 @@ public class ForgePreview {
      */
     public void clearFor(Player player) {
         List<BlockDisplay> displays = activeDisplays.remove(player.getUniqueId());
-        if (displays == null) return;
+        if (displays == null)
+            return;
         for (BlockDisplay d : displays) {
             if (!d.isDead()) {
                 player.hideEntity(plugin, d);
                 d.remove();
             }
         }
+    }
+
+    /**
+     * Bắt đầu fade out các ghost blocks của player này bằng hiệu ứng thu nhỏ về 0,
+     * sau đó dọn dẹp các thực thể này.
+     */
+    public void fadeOutAndClearFor(Player player) {
+        List<BlockDisplay> displays = activeDisplays.get(player.getUniqueId());
+        if (displays == null)
+            return;
+
+        int fadeTicks = 15; // 0.75 giây để thu nhỏ về 0
+        for (BlockDisplay d : displays) {
+            if (!d.isDead()) {
+                d.setInterpolationDelay(0);
+                d.setInterpolationDuration(fadeTicks);
+                Transformation current = d.getTransformation();
+                Transformation target = new Transformation(
+                        new Vector3f(0.5f, 0.5f, 0.5f), // Di chuyển tâm về giữa block space
+                        current.getLeftRotation(),
+                        new Vector3f(0.0f, 0.0f, 0.0f), // Thu nhỏ kích thước về 0
+                        current.getRightRotation());
+                d.setTransformation(target);
+            }
+        }
+
+        // Đợi fade-out hoàn tất rồi mới xóa thực tế
+        plugin.getServer().getScheduler().runTaskLater(
+                plugin,
+                () -> {
+                    List<BlockDisplay> currentDisplays = activeDisplays.get(player.getUniqueId());
+                    if (currentDisplays == displays) {
+                        clearFor(player);
+                    }
+                },
+                fadeTicks);
     }
 
     /**
@@ -131,27 +163,37 @@ public class ForgePreview {
 
     // ── Internal ──────────────────────────────────────────────
 
-    private BlockDisplay spawnGhost(Player player, Location missingLoc) {
+    private BlockDisplay spawnGhost(Player player, Location missingLoc, Material material) {
         World world = missingLoc.getWorld();
-        if (world == null) return null;
+        if (world == null)
+            return null;
 
         // Spawn tại góc nguyên (integer coords) của block cell
         Location spawnLoc = new Location(
-            world,
-            missingLoc.getBlockX(),
-            missingLoc.getBlockY(),
-            missingLoc.getBlockZ()
-        );
+                world,
+                missingLoc.getBlockX(),
+                missingLoc.getBlockY(),
+                missingLoc.getBlockZ());
 
         try {
             BlockDisplay display = world.spawn(spawnLoc, BlockDisplay.class, entity -> {
-                entity.setBlock(GHOST_MATERIAL.createBlockData());
-                entity.setGlowing(true);          // glow effect
-                entity.setGravity(false);          // không rơi
+                entity.setBlock(material.createBlockData());
+                entity.setGlowing(true); // glow effect
+                entity.setGlowColorOverride(org.bukkit.Color.RED); // glow màu đỏ báo hiệu thiếu block
+                entity.setGravity(false); // không rơi
                 entity.setVisibleByDefault(false); // ẩn với tất cả player khác
                 entity.setInvulnerable(true);
                 entity.setSilent(true);
-                entity.setPersistent(false);       // không lưu vào disk
+                entity.setPersistent(false); // không lưu vào disk
+
+                // Thu nhỏ và căn giữa để tạo cảm giác ảo ảnh/mờ nhạt
+                Transformation trans = entity.getTransformation();
+                Transformation newTrans = new Transformation(
+                        new Vector3f(0.1f, 0.1f, 0.1f), // Căn giữa
+                        trans.getLeftRotation(),
+                        new Vector3f(0.8f, 0.8f, 0.8f), // Kích thước 80%
+                        trans.getRightRotation());
+                entity.setTransformation(newTrans);
             });
 
             // Chỉ cho player này thấy
@@ -160,8 +202,7 @@ public class ForgePreview {
 
         } catch (Exception e) {
             plugin.getPluginLogger().error(
-                "Không thể spawn ghost block tại " + spawnLoc, e
-            );
+                    "Không thể spawn ghost block tại " + spawnLoc, e);
             return null;
         }
     }

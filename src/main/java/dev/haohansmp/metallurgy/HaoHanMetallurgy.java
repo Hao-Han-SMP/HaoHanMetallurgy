@@ -88,6 +88,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
             metallurgyCmd.setTabCompleter(cmd);
         }
 
+        // 8. Restore active machines
+        machineManager.loadAll();
+
         pluginLogger.info("Core Engine enabled. Recipes: " + recipeLoader.count()
             + " | Machines: " + machineManager.count());
         pluginLogger.info("=========================");
@@ -97,11 +100,12 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     public void onDisable() {
         pluginLogger.info("Shutting down HaoHan Metallurgy...");
 
-        // Dừng tick engine trước
         if (tickEngine != null) tickEngine.stop();
 
-        // Pause tất cả machines (chuẩn bị serialize - Phase 8)
-        if (machineManager != null) machineManager.pauseAll();
+        if (machineManager != null) {
+            machineManager.saveAll();
+            machineManager.pauseAll();
+        }
 
         pluginLogger.info("HaoHan Metallurgy disabled. Goodbye!");
         instance = null;

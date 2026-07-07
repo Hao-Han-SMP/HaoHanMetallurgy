@@ -185,8 +185,16 @@ public abstract class Machine {
         }
     }
 
-    protected void setState(MachineState state) {
+    public void setState(MachineState state) {
         this.state = state;
+    }
+
+    public void setTemperature(int temperature) {
+        this.temperature = temperature;
+    }
+
+    public void setFuelTicksRemaining(int fuelTicksRemaining) {
+        this.fuelTicksRemaining = fuelTicksRemaining;
     }
 
     // ── Internal ───────────────────────────────────────────────

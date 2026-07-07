@@ -165,13 +165,33 @@ public class ForgeListener implements Listener {
         Block block = event.getBlock();
         Location loc = block.getLocation();
 
-        // 1. Phá controller block → deactivate hoàn toàn
+        // Kiểm tra xem block bị phá hủy có thuộc cấu trúc của lò rèn nào đang chạy không
+        AncientForge activeForge = getActiveForgeFromBlock(block);
+        if (activeForge != null) {
+            // Hủy sự kiện phá block mặc định của Minecraft để tự xử lý
+            event.setCancelled(true);
+            
+            Location coreLoc = activeForge.getLocation();
+            plugin.getMachineManager().unregister(coreLoc);
+            
+            // Hoàn trả lại các block cũ của lò rèn về trạng thái ban đầu
+            restoreOriginalBlocks(activeForge, block);
+
+            // Gửi tin nhắn
+            event.getPlayer().sendMessage("§8[§6Forge§8] §eLò Rèn Cổ Đại đã bị hủy kích hoạt. Các vật phẩm đã rơi ra.");
+            plugin.getPluginLogger().info(
+                "AncientForge deactivated due to block break at " + formatLoc(coreLoc) + " by " + event.getPlayer().getName()
+            );
+            return;
+        }
+
+        // 2. Phá controller block thông thường (khi chưa được kích hoạt thành lò)
         if (plugin.getMachineManager().exists(loc)) {
             deactivateForge(loc, block, event.getPlayer());
             return;
         }
 
-        // 2. Phá structural block → kiểm tra forge lân cận
+        // 3. Phá structural block khi chưa được kích hoạt
         if (ForgeStructure.isStructuralMaterial(block.getType())) {
             invalidateNearbyForges(block);
         }
@@ -185,15 +205,42 @@ public class ForgeListener implements Listener {
             player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc lò rèn không hợp lệ!");
             return;
         }
-        AncientForge forge = new AncientForge(plugin, loc, rotation);
+
+        // 1. Chụp lại toàn bộ các khối cấu trúc thật để phục hồi sau này
+        java.util.Map<ForgeStructure.BlockOffset, Material> originalBlocks = new java.util.HashMap<>();
+        originalBlocks.put(new ForgeStructure.BlockOffset(0, 0, 0, ForgeStructure.CONTROLLER_MATERIAL), ForgeStructure.CONTROLLER_MATERIAL);
+        for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
+            int rx = offset.dx();
+            int rz = offset.dz();
+            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
+            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+            Material mat = loc.clone().add(rx, offset.dy(), rz).getBlock().getType();
+            originalBlocks.put(offset, mat);
+        }
+
+        // 2. Tạo instance lò rèn
+        AncientForge forge = new AncientForge(plugin, loc, rotation, originalBlocks);
 
         if (!plugin.getMachineManager().register(forge)) {
             player.sendMessage("§cKhông thể kích hoạt forge (đã tồn tại?).");
             return;
         }
 
-        PdcUtil.setMachineType(plugin, controllerBlock, MachineType.ANCIENT_FORGE);
-        player.sendMessage("§8[§6Forge§8] §a✔ Ancient Forge kích hoạt thành công!");
+        // 3. Thay thế toàn bộ 35 block bằng BARRIER để làm chúng hoàn toàn vô hình
+        loc.getBlock().setType(Material.BARRIER, false);
+        for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
+            int rx = offset.dx();
+            int rz = offset.dz();
+            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
+            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+            loc.clone().add(rx, offset.dy(), rz).getBlock().setType(Material.BARRIER, false);
+        }
+
+        player.sendMessage("§8[§6Forge§8] §a✔ Kích hoạt Lò Rèn Cổ Đại thành công! Mô hình 3D đã được thiết lập.");
         plugin.getPluginLogger().info(
             "AncientForge activated at " + formatLoc(loc) + " by " + player.getName()
         );
@@ -224,25 +271,48 @@ public class ForgeListener implements Listener {
         for (int slot : ForgeGui.INTERACTIVE) {
             ItemStack item = inv.getItem(slot);
             if (item != null && item.getType() != Material.AIR) {
-                // Lọc bỏ các block hiển thị/background nếu có (mặc dù interactive slots không có background)
                 loc.getWorld().dropItemNaturally(loc.clone().add(0.5, 0.5, 0.5), item);
             }
         }
     }
 
-    /**
-     * Khi player phá một structural block, kiểm tra xem nó có thuộc cấu trúc lò đang hoạt động không.
-     */
+    private void restoreOriginalBlocks(AncientForge forge, Block brokenBlock) {
+        Location loc = forge.getLocation();
+        int rotation = forge.getRotation();
+
+        // Rơi nguyên liệu chứa bên trong ra ngoài
+        dropMachineContents(forge);
+
+        for (java.util.Map.Entry<ForgeStructure.BlockOffset, Material> entry : forge.getOriginalBlocks().entrySet()) {
+            ForgeStructure.BlockOffset offset = entry.getKey();
+            Material mat = entry.getValue();
+
+            int rx = offset.dx();
+            int rz = offset.dz();
+            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
+            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
+            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+
+            Block block = loc.clone().add(rx, offset.dy(), rz).getBlock();
+            if (block.equals(brokenBlock)) {
+                block.setType(Material.AIR, false);
+                if (mat != Material.AIR) {
+                    loc.getWorld().dropItemNaturally(block.getLocation(), new ItemStack(mat, 1));
+                }
+            } else {
+                block.setType(mat, false);
+            }
+        }
+    }
+
     private void invalidateNearbyForges(Block brokenBlock) {
         AncientForge forge = getActiveForgeFromBlock(brokenBlock);
         if (forge == null) return;
 
         Location coreLoc = forge.getLocation();
         plugin.getMachineManager().unregister(coreLoc);
-        Block controller = coreLoc.getBlock();
-        PdcUtil.clearMachineData(plugin, controller);
 
-        dropMachineContents(forge);
+        restoreOriginalBlocks(forge, brokenBlock);
 
         coreLoc.getWorld().getPlayers().stream()
             .filter(p -> p.getLocation().distanceSquared(coreLoc) < 50 * 50)

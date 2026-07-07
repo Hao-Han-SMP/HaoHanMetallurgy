@@ -2,7 +2,9 @@ package dev.haohansmp.metallurgy.machine;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
 import org.bukkit.Location;
-
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import java.io.File;
 import java.util.*;
 
 /**
@@ -105,5 +107,107 @@ public class MachineManager {
             }
         });
         plugin.getPluginLogger().info("Paused " + machines.size() + " machine(s) for shutdown and cleared display models.");
+    }
+
+    public void saveAll() {
+        File file = new File(plugin.getDataFolder(), "machines.yml");
+        org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
+
+        int i = 0;
+        for (Machine machine : machines.values()) {
+            String path = "machines." + i;
+            yaml.set(path + ".type", machine.getType().name());
+            yaml.set(path + ".location", machine.getLocation());
+            yaml.set(path + ".temperature", machine.getTemperature());
+            yaml.set(path + ".fuel", machine.getFuelTicksRemaining());
+            yaml.set(path + ".state", machine.getState().name());
+
+            if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+                yaml.set(path + ".rotation", forge.getRotation());
+                yaml.set(path + ".inventory", forge.getInventory().getContents());
+
+                List<Map<String, Object>> origList = new ArrayList<>();
+                for (Map.Entry<dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset, Material> entry : forge.getOriginalBlocks().entrySet()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("dx", entry.getKey().dx());
+                    map.put("dy", entry.getKey().dy());
+                    map.put("dz", entry.getKey().dz());
+                    map.put("material", entry.getValue().name());
+                    origList.add(map);
+                }
+                yaml.set(path + ".original_blocks", origList);
+            }
+            i++;
+        }
+
+        try {
+            yaml.save(file);
+            plugin.getPluginLogger().info("Saved " + machines.size() + " active machine(s) to machines.yml.");
+        } catch (java.io.IOException e) {
+            plugin.getPluginLogger().error("Failed to save machines.yml", e);
+        }
+    }
+
+    public void loadAll() {
+        File file = new File(plugin.getDataFolder(), "machines.yml");
+        if (!file.exists()) return;
+
+        org.bukkit.configuration.file.YamlConfiguration yaml = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file);
+        var section = yaml.getConfigurationSection("machines");
+        if (section == null) return;
+
+        for (String key : section.getKeys(false)) {
+            String path = "machines." + key;
+            String typeStr = yaml.getString(path + ".type");
+            Location loc = yaml.getLocation(path + ".location");
+            if (loc == null || typeStr == null) continue;
+
+            if (typeStr.equals(MachineType.ANCIENT_FORGE.name())) {
+                int rotation = yaml.getInt(path + ".rotation");
+
+                Map<dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset, Material> originalBlocks = new HashMap<>();
+                List<?> list = yaml.getList(path + ".original_blocks");
+                if (list != null) {
+                    for (Object obj : list) {
+                        if (obj instanceof Map<?, ?> map) {
+                            int dx = ((Number) map.get("dx")).intValue();
+                            int dy = ((Number) map.get("dy")).intValue();
+                            int dz = ((Number) map.get("dz")).intValue();
+                            Material mat = Material.valueOf((String) map.get("material"));
+                            originalBlocks.put(new dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset(dx, dy, dz, mat), mat);
+                        }
+                    }
+                }
+
+                dev.haohansmp.metallurgy.machine.forge.AncientForge forge = new dev.haohansmp.metallurgy.machine.forge.AncientForge(plugin, loc, rotation, originalBlocks);
+
+                List<?> invList = yaml.getList(path + ".inventory");
+                if (invList != null) {
+                    ItemStack[] contents = new ItemStack[forge.getInventory().getSize()];
+                    for (int j = 0; j < invList.size() && j < contents.length; j++) {
+                        Object itemObj = invList.get(j);
+                        if (itemObj instanceof ItemStack itemStack) {
+                            contents[j] = itemStack;
+                        }
+                    }
+                    forge.getInventory().setContents(contents);
+                }
+
+                int temp = yaml.getInt(path + ".temperature");
+                int fuel = yaml.getInt(path + ".fuel");
+                String stateStr = yaml.getString(path + ".state", "IDLE");
+
+                forge.setTemperature(temp);
+                forge.setFuelTicksRemaining(fuel);
+                try {
+                    forge.setState(MachineState.valueOf(stateStr));
+                } catch (Exception e) {}
+
+                register(forge);
+            }
+        }
+
+        file.delete();
+        plugin.getPluginLogger().info("Restored all active machines from machines.yml.");
     }
 }

@@ -25,16 +25,26 @@ import java.util.List;
 public class AncientForge extends Machine {
 
     private final int rotation;
+    private final java.util.Map<ForgeStructure.BlockOffset, Material> originalBlocks;
     private org.bukkit.entity.ItemDisplay displayEntity = null;
 
     public AncientForge(HaoHanMetallurgy plugin, Location controllerLocation, int rotation) {
+        this(plugin, controllerLocation, rotation, new java.util.HashMap<>());
+    }
+
+    public AncientForge(HaoHanMetallurgy plugin, Location controllerLocation, int rotation, java.util.Map<ForgeStructure.BlockOffset, Material> originalBlocks) {
         super(plugin, controllerLocation, MachineType.ANCIENT_FORGE);
         this.rotation = rotation;
+        this.originalBlocks = originalBlocks;
         spawnDisplayEntity();
     }
 
     public int getRotation() {
         return rotation;
+    }
+
+    public java.util.Map<ForgeStructure.BlockOffset, Material> getOriginalBlocks() {
+        return originalBlocks;
     }
 
     private void spawnDisplayEntity() {

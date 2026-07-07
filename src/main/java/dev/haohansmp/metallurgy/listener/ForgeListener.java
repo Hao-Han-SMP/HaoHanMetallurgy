@@ -3,11 +3,14 @@ package dev.haohansmp.metallurgy.listener;
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
 import dev.haohansmp.metallurgy.data.PdcUtil;
 import dev.haohansmp.metallurgy.gui.forge.ForgeGui;
+import dev.haohansmp.metallurgy.machine.Machine;
 import dev.haohansmp.metallurgy.machine.MachineType;
 import dev.haohansmp.metallurgy.machine.forge.AncientForge;
+import dev.haohansmp.metallurgy.machine.forge.ForgePreview;
 import dev.haohansmp.metallurgy.machine.forge.ForgeStructure;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Xử lý tương tác của player với Ancient Forge:
@@ -28,9 +32,11 @@ import org.bukkit.inventory.EquipmentSlot;
 public class ForgeListener implements Listener {
 
     private final HaoHanMetallurgy plugin;
+    private final ForgePreview preview;
 
     public ForgeListener(HaoHanMetallurgy plugin) {
         this.plugin = plugin;
+        this.preview = new ForgePreview(plugin);
     }
 
     // ── Player Interact ───────────────────────────────────────
@@ -42,12 +48,42 @@ public class ForgeListener implements Listener {
         if (event.getHand() != EquipmentSlot.HAND) return;
 
         Block block = event.getClickedBlock();
-        if (block == null || block.getType() != ForgeStructure.CONTROLLER_MATERIAL) return;
+        if (block == null) return;
+
+        Material blockType = block.getType();
+
+        // ── Xử lý Bellows (Ống Thổi Khí) click ──────────────────
+        if (blockType == Material.PISTON || blockType == Material.DISPENSER) {
+            org.bukkit.block.BlockFace[] faces = {
+                org.bukkit.block.BlockFace.NORTH, 
+                org.bukkit.block.BlockFace.SOUTH, 
+                org.bukkit.block.BlockFace.EAST, 
+                org.bukkit.block.BlockFace.WEST,
+                org.bukkit.block.BlockFace.UP,
+                org.bukkit.block.BlockFace.DOWN
+            };
+            for (org.bukkit.block.BlockFace face : faces) {
+                Block adj = block.getRelative(face);
+                Location adjLoc = adj.getLocation();
+                var machineOpt = plugin.getMachineManager().get(adjLoc);
+                if (machineOpt.isPresent() && machineOpt.get() instanceof AncientForge forge) {
+                    event.setCancelled(true);
+                    // Thổi khí tăng nhiệt
+                    forge.boostTemperature(40);
+                    event.getPlayer().sendActionBar("§6💨 Phùuu! Đã thổi khí vào lò rèn lân cận.");
+                    return;
+                }
+            }
+            return;
+        }
+
+        // ── Xử lý lò Blast Furnace click ─────────────────────
+        if (blockType != ForgeStructure.CONTROLLER_MATERIAL) return;
 
         Player player = event.getPlayer();
         Location loc = block.getLocation();
 
-        // ── Shift + right-click → show structure info ────────
+        // ── Shift + right-click → show structure info + ghost blocks ────
         if (player.isSneaking()) {
             event.setCancelled(true);
             boolean isActive = plugin.getMachineManager().exists(loc);
@@ -60,11 +96,8 @@ public class ForgeListener implements Listener {
                 }
             } else {
                 player.sendMessage("§8[§6Forge§8] " + ForgeStructure.getDescription());
-                var missing = ForgeStructure.getMissingBlocks(loc);
-                if (!missing.isEmpty()) {
-                    player.sendMessage("§cBlock còn thiếu:");
-                    missing.forEach(player::sendMessage);
-                }
+                // Hiển thị ghost blocks đỏ cho các block còn thiếu
+                preview.showMissing(player, loc);
             }
             return;
         }
@@ -86,17 +119,27 @@ public class ForgeListener implements Listener {
             return;
         }
 
-        // 3. Validate structure
+        // 3. Cấu trúc không hợp lệ → hint + ghost blocks
         if (!ForgeStructure.validate(loc)) {
-            // Không cancel event — để player có thể dùng blast furnace bình thường
-            // nếu cấu trúc chưa đúng
             player.sendMessage("§8[§6Forge§8] §7Cấu trúc chưa đủ. "
-                + "§eShift+Right-click §7để xem hướng dẫn.");
+                + "§eShift+Right-click §7để xem ghost blocks.");
             return;
+        }
+
+        // Kiểm tra xem blast furnace có chứa vật phẩm nào bên trong không
+        if (block.getState() instanceof org.bukkit.block.BlastFurnace bf) {
+            boolean hasItems = java.util.Arrays.stream(bf.getInventory().getContents())
+                .anyMatch(item -> item != null && item.getType() != Material.AIR);
+            if (hasItems) {
+                player.sendMessage("§8[§6Forge§8] §c⚠ Vui lòng lấy hết vật phẩm trong lò Blast Furnace ra trước khi kích hoạt Lò Rèn Cổ Đại!");
+                player.playSound(loc, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                return;
+            }
         }
 
         // 4. Cấu trúc hợp lệ → activate
         event.setCancelled(true);
+        preview.clearFor(player); // xóa ghost blocks trước khi activate
         activateForge(player, block, loc);
     }
 
@@ -140,13 +183,31 @@ public class ForgeListener implements Listener {
     }
 
     private void deactivateForge(Location loc, Block block, Player player) {
+        var machineOpt = plugin.getMachineManager().get(loc);
         plugin.getMachineManager().unregister(loc);
         PdcUtil.clearMachineData(plugin, block);
 
-        player.sendMessage("§8[§6Forge§8] §eAncie Forge đã bị phá hủy. Item trong máy đã mất.");
+        if (machineOpt.isPresent()) {
+            dropMachineContents(machineOpt.get());
+        }
+
+        player.sendMessage("§8[§6Forge§8] §eAncient Forge đã bị phá hủy. Các vật phẩm trong lò đã rơi ra.");
         plugin.getPluginLogger().info(
             "AncientForge destroyed at " + formatLoc(loc) + " by " + player.getName()
         );
+    }
+
+    private void dropMachineContents(Machine machine) {
+        Location loc = machine.getLocation();
+        if (loc.getWorld() == null) return;
+        org.bukkit.inventory.Inventory inv = machine.getInventory();
+        for (int slot : ForgeGui.INTERACTIVE) {
+            ItemStack item = inv.getItem(slot);
+            if (item != null && item.getType() != Material.AIR) {
+                // Lọc bỏ các block hiển thị/background nếu có (mặc dù interactive slots không có background)
+                loc.getWorld().dropItemNaturally(loc.clone().add(0.5, 0.5, 0.5), item);
+            }
+        }
     }
 
     /**
@@ -162,9 +223,14 @@ public class ForgeListener implements Listener {
                 if (!plugin.getMachineManager().exists(nearby)) continue;
 
                 if (!ForgeStructure.validate(nearby)) {
+                    var machineOpt = plugin.getMachineManager().get(nearby);
                     plugin.getMachineManager().unregister(nearby);
                     Block controller = nearby.getBlock();
                     PdcUtil.clearMachineData(plugin, controller);
+
+                    if (machineOpt.isPresent()) {
+                        dropMachineContents(machineOpt.get());
+                    }
 
                     nearby.getWorld().getPlayers().stream()
                         .filter(p -> p.getLocation().distanceSquared(nearby) < 50 * 50)

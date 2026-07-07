@@ -3,9 +3,11 @@ package dev.haohansmp.metallurgy.gui;
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 
 import java.util.*;
 
@@ -64,7 +66,7 @@ public class GuiManager implements Listener {
 
     // ── Event Listeners ───────────────────────────────────────
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
@@ -74,8 +76,29 @@ public class GuiManager implements Listener {
         // Đảm bảo click đúng inventory của GUI này
         if (!event.getInventory().equals(gui.getInventory())) return;
 
-        event.setCancelled(true); // Default: cancel click, GUI tự xử lý
+        // Default cancel — GUI.onClick() sẽ un-cancel những slot cho phép
+        event.setCancelled(true);
         gui.onClick(event);
+    }
+
+    /**
+     * Chặn drag (kéo thả item) vào bất kỳ slot nào trong GUI top inventory.
+     * Drag là click type riêng, không đi qua InventoryClickEvent.
+     */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+
+        MetallurgyGui gui = openGuis.get(player.getUniqueId());
+        if (gui == null) return;
+        if (!event.getInventory().equals(gui.getInventory())) return;
+
+        int guiSize = gui.getInventory().getSize();
+        // Nếu drag chạm vào bất kỳ slot nào trong GUI top → cancel toàn bộ drag
+        boolean touchesGui = event.getRawSlots().stream().anyMatch(s -> s < guiSize);
+        if (touchesGui) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler

@@ -22,7 +22,8 @@ class MetallurgyRecipeTest {
             Material.IRON_INGOT, 2,
             "&6Embersteel Ingot",
             List.of("&7Test lore"),
-            1001
+            1001,
+            "embersteel_ingot"
         );
         return new MetallurgyRecipe(
             "ancient_forge/embersteel_ingot",
@@ -31,7 +32,9 @@ class MetallurgyRecipeTest {
             output,
             400,
             30,
-            800
+            800,
+            1200,
+            "haohansmp:metallurgy/find_ember_ore"
         );
     }
 
@@ -70,6 +73,8 @@ class MetallurgyRecipeTest {
         assertEquals(400, recipe.getFuelCost());
         assertEquals(30, recipe.getTimeSeconds());
         assertEquals(800, recipe.getMinTemperature());
+        assertEquals(1200, recipe.getMaxTemperature());
+        assertEquals("haohansmp:metallurgy/find_ember_ore", recipe.getRequiredAdvancement());
     }
 
     @Test
@@ -80,5 +85,6 @@ class MetallurgyRecipeTest {
         assertEquals(2, output.amount());
         assertEquals(1001, output.customModelData());
         assertEquals(1, output.lore().size());
+        assertEquals("embersteel_ingot", output.customItemId());
     }
 }

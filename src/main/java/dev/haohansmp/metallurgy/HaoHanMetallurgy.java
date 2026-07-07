@@ -4,8 +4,10 @@ import dev.haohansmp.metallurgy.command.MetallurgyCommand;
 import dev.haohansmp.metallurgy.config.ConfigManager;
 import dev.haohansmp.metallurgy.engine.TickEngine;
 import dev.haohansmp.metallurgy.gui.GuiManager;
+import dev.haohansmp.metallurgy.item.ItemManager;
 import dev.haohansmp.metallurgy.listener.ChunkListener;
 import dev.haohansmp.metallurgy.listener.ForgeListener;
+import dev.haohansmp.metallurgy.listener.ProgressionListener;
 import dev.haohansmp.metallurgy.machine.MachineManager;
 import dev.haohansmp.metallurgy.recipe.RecipeLoader;
 import dev.haohansmp.metallurgy.util.PluginLogger;
@@ -35,6 +37,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     // ── Managers ───────────────────────────────────────────────
     private PluginLogger pluginLogger;
     private ConfigManager configManager;
+    private ItemManager itemManager;
     private RecipeLoader recipeLoader;
     private MachineManager machineManager;
     private GuiManager guiManager;
@@ -54,6 +57,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         // 2. Config
         configManager = new ConfigManager(this);
 
+        // 2.5 Item Manager
+        itemManager = new ItemManager(this);
+
         // 3. Recipe Loader
         recipeLoader = new RecipeLoader(this);
         recipeLoader.loadAll();
@@ -68,8 +74,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         // 6. Forge-specific listeners
         getServer().getPluginManager().registerEvents(new ForgeListener(this), this);
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
+        getServer().getPluginManager().registerEvents(new ProgressionListener(this), this);
 
-        // 6. Tick Engine (khởi động sau khi managers sẵn sàng)
+        // 7. Tick Engine (khởi động sau khi managers sẵn sàng)
         tickEngine = new TickEngine(this);
         tickEngine.start();
 
@@ -104,6 +111,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
 
     public PluginLogger getPluginLogger()   { return pluginLogger; }
     public ConfigManager getConfigManager() { return configManager; }
+    public ItemManager getItemManager()     { return itemManager; }
     public RecipeLoader getRecipeLoader()   { return recipeLoader; }
     public MachineManager getMachineManager() { return machineManager; }
     public GuiManager getGuiManager()       { return guiManager; }

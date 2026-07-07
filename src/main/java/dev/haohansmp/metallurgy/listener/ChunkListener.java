@@ -76,12 +76,19 @@ public class ChunkListener implements Listener {
 
     private List<Machine> getMachinesInChunk(Chunk chunk) {
         List<Machine> result = new ArrayList<>();
+        int cx = chunk.getX();
+        int cz = chunk.getZ();
+
         for (Machine machine : plugin.getMachineManager().getAll()) {
             Location loc = machine.getLocation();
             if (loc.getWorld() == null) continue;
             if (!loc.getWorld().equals(chunk.getWorld())) continue;
-            if (loc.getChunk().getX() == chunk.getX()
-                && loc.getChunk().getZ() == chunk.getZ()) {
+
+            // Xác định chunk X và Z của Location bằng bitwise shift (nhanh và an toàn tuyệt đối)
+            int machineCx = loc.getBlockX() >> 4;
+            int machineCz = loc.getBlockZ() >> 4;
+
+            if (machineCx == cx && machineCz == cz) {
                 result.add(machine);
             }
         }

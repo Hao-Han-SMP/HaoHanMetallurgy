@@ -6,6 +6,7 @@ import dev.haohansmp.metallurgy.machine.MachineState;
 import dev.haohansmp.metallurgy.machine.MachineType;
 import dev.haohansmp.metallurgy.recipe.MetallurgyRecipe;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -37,10 +38,27 @@ public class AncientForge extends Machine {
     protected void onRecipeComplete(MetallurgyRecipe recipe) {
         ItemStack result = buildOutputItem(recipe.getOutput());
 
-        // Drop output tại tâm block, y+1 để không bị kẹt trong block
-        Location dropLoc = getLocation().clone().add(0.5, 1.2, 0.5);
-        if (dropLoc.getWorld() != null) {
-            dropLoc.getWorld().dropItemNaturally(dropLoc, result);
+        // Đặt vật phẩm nung thành công vào ô Output (slot 15) của máy
+        ItemStack existing = inventory.getItem(15);
+        if (existing == null || existing.getType() == Material.AIR) {
+            inventory.setItem(15, result);
+        } else if (existing.isSimilar(result)) {
+            int newAmount = existing.getAmount() + result.getAmount();
+            if (newAmount <= existing.getMaxStackSize()) {
+                existing.setAmount(newAmount);
+            } else {
+                // Đầy -> Rơi ra ngoài
+                Location dropLoc = getLocation().clone().add(0.5, 1.2, 0.5);
+                if (dropLoc.getWorld() != null) {
+                    dropLoc.getWorld().dropItemNaturally(dropLoc, result);
+                }
+            }
+        } else {
+            // Khác loại vật phẩm -> Rơi ra ngoài làm fallback
+            Location dropLoc = getLocation().clone().add(0.5, 1.2, 0.5);
+            if (dropLoc.getWorld() != null) {
+                dropLoc.getWorld().dropItemNaturally(dropLoc, result);
+            }
         }
 
         plugin.getPluginLogger().info(
@@ -68,6 +86,13 @@ public class AncientForge extends Machine {
 
     @SuppressWarnings("deprecation")
     private ItemStack buildOutputItem(MetallurgyRecipe.OutputItem out) {
+        if (out.customItemId() != null && !out.customItemId().isEmpty()) {
+            java.util.Optional<dev.haohansmp.metallurgy.item.CustomItem> ciOpt = dev.haohansmp.metallurgy.item.CustomItem.getById(out.customItemId());
+            if (ciOpt.isPresent()) {
+                return plugin.getItemManager().createItem(ciOpt.get(), out.amount());
+            }
+        }
+
         ItemStack item = new ItemStack(out.material(), out.amount());
         ItemMeta meta = item.getItemMeta();
 

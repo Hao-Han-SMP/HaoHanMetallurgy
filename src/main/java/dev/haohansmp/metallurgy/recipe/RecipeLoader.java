@@ -108,8 +108,21 @@ public class RecipeLoader {
 
         // Parse output
         JsonObject outObj = obj.getAsJsonObject("output");
-        Material outMat = requireMaterial(outObj.get("material").getAsString(), file);
-        if (outMat == null) return null;
+        String customItemId = outObj.has("custom_item") ? outObj.get("custom_item").getAsString() : null;
+        Material outMat = null;
+        
+        if (customItemId != null) {
+            java.util.Optional<dev.haohansmp.metallurgy.item.CustomItem> ciOpt = dev.haohansmp.metallurgy.item.CustomItem.getById(customItemId);
+            if (ciOpt.isPresent()) {
+                outMat = ciOpt.get().getMaterial();
+            } else {
+                plugin.getPluginLogger().error("Unknown custom item ID '" + customItemId + "' in " + file.getName());
+                return null;
+            }
+        } else {
+            outMat = requireMaterial(outObj.get("material").getAsString(), file);
+            if (outMat == null) return null;
+        }
 
         String displayName = outObj.has("display_name") ? outObj.get("display_name").getAsString() : null;
         List<String> lore = new ArrayList<>();
@@ -123,14 +136,17 @@ public class RecipeLoader {
                 outObj.get("amount").getAsInt(),
                 displayName,
                 lore,
-                cmd
+                cmd,
+                customItemId
         );
 
         int fuelCost     = obj.has("fuel_cost")       ? obj.get("fuel_cost").getAsInt()       : 0;
         int timeSeconds  = obj.has("time_seconds")    ? obj.get("time_seconds").getAsInt()    : 10;
         int minTemp      = obj.has("min_temperature") ? obj.get("min_temperature").getAsInt() : 0;
+        int maxTemp      = obj.has("max_temperature") ? obj.get("max_temperature").getAsInt() : (minTemp + 400);
+        String reqAdv    = obj.has("required_advancement") ? obj.get("required_advancement").getAsString() : null;
 
-        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp);
+        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp, maxTemp, reqAdv);
     }
 
     private Material requireMaterial(String name, File file) {

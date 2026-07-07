@@ -19,6 +19,8 @@ public final class MetallurgyRecipe {
     private final int fuelCost;
     private final int timeSeconds;
     private final int minTemperature;
+    private final int maxTemperature;
+    private final String requiredAdvancement;
 
     public MetallurgyRecipe(String id,
                             String machineType,
@@ -26,7 +28,9 @@ public final class MetallurgyRecipe {
                             OutputItem output,
                             int fuelCost,
                             int timeSeconds,
-                            int minTemperature) {
+                            int minTemperature,
+                            int maxTemperature,
+                            String requiredAdvancement) {
         this.id = id;
         this.machineType = machineType;
         this.inputs = List.copyOf(inputs);
@@ -34,6 +38,8 @@ public final class MetallurgyRecipe {
         this.fuelCost = fuelCost;
         this.timeSeconds = timeSeconds;
         this.minTemperature = minTemperature;
+        this.maxTemperature = maxTemperature;
+        this.requiredAdvancement = requiredAdvancement;
     }
 
     // ── Getters ────────────────────────────────────────────────
@@ -44,6 +50,8 @@ public final class MetallurgyRecipe {
     public int getFuelCost()         { return fuelCost; }
     public int getTimeSeconds()      { return timeSeconds; }
     public int getMinTemperature()   { return minTemperature; }
+    public int getMaxTemperature()   { return maxTemperature; }
+    public String getRequiredAdvancement() { return requiredAdvancement; }
 
     @Override
     public String toString() {
@@ -64,5 +72,6 @@ public final class MetallurgyRecipe {
                               int amount,
                               String displayName,
                               List<String> lore,
-                              int customModelData) {}
+                              int customModelData,
+                              String customItemId) {}
 }

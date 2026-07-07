@@ -58,7 +58,7 @@ eula=false  →  eula=true
 ## Bước 3: Deploy Plugin
 
 ```
-copy target\HaoHanMetallurgy-1.0-SNAPSHOT.jar  C:\MC_TestServer\plugins\
+copy target\HaoHanMetallurgy-1.0-SNAPSHOT.jar  F:\TestServer\plugins\
 ```
 
 Chạy `start.bat` lại. Server log sẽ hiện:

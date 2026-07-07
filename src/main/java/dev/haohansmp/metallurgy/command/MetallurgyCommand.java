@@ -50,6 +50,7 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
             case "reload" -> handleReload(sender);
             case "debug"  -> handleDebug(sender);
             case "list"   -> handleList(sender);
+            case "give"   -> handleGive(sender, args);
             default       -> sendHelp(sender);
         }
 
@@ -62,7 +63,15 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
                                       @NotNull String alias,
                                       @NotNull String[] args) {
         if (args.length == 1) {
-            return List.of("info", "reload", "debug", "list");
+            return List.of("info", "reload", "debug", "list", "give");
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+            return null; // Bukkit tự động điền tên online players
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("give")) {
+            return java.util.Arrays.stream(dev.haohansmp.metallurgy.item.CustomItem.values())
+                .map(dev.haohansmp.metallurgy.item.CustomItem::getId)
+                .toList();
         }
         return List.of();
     }
@@ -115,11 +124,46 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
         });
     }
 
+    private void handleGive(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(PREFIX + "§cSử dụng: /metallurgy give <player> <item_id> [amount]");
+            return;
+        }
+
+        org.bukkit.entity.Player target = org.bukkit.Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            sender.sendMessage(PREFIX + "§cKhông tìm thấy người chơi: " + args[1]);
+            return;
+        }
+
+        String itemId = args[2];
+        java.util.Optional<dev.haohansmp.metallurgy.item.CustomItem> itemOpt = dev.haohansmp.metallurgy.item.CustomItem.getById(itemId);
+        if (itemOpt.isEmpty()) {
+            sender.sendMessage(PREFIX + "§cKhông tìm thấy custom item: " + itemId);
+            return;
+        }
+
+        int amount = 1;
+        if (args.length >= 4) {
+            try {
+                amount = Integer.parseInt(args[3]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(PREFIX + "§cSố lượng không hợp lệ. Mặc định là 1.");
+            }
+        }
+
+        org.bukkit.inventory.ItemStack itemStack = plugin.getItemManager().createItem(itemOpt.get(), amount);
+        target.getInventory().addItem(itemStack);
+        sender.sendMessage(PREFIX + "§aĐã cho §e" + target.getName() + " §f" + amount + "x " + itemOpt.get().getDisplayName());
+        target.sendMessage(PREFIX + "§aBạn nhận được §f" + amount + "x " + itemOpt.get().getDisplayName() + " §atừ Admin.");
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(PREFIX + "§eCommands:");
         sender.sendMessage("  §6/metallurgy info    §7— Thông tin plugin");
         sender.sendMessage("  §6/metallurgy reload  §7— Reload config + recipe");
         sender.sendMessage("  §6/metallurgy debug   §7— Toggle debug mode");
         sender.sendMessage("  §6/metallurgy list    §7— List machines đang active");
+        sender.sendMessage("  §6/metallurgy give    §7— Nhận custom metallurgy items");
     }
 }

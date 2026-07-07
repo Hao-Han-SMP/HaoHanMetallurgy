@@ -5,17 +5,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Abstract base cho tất cả GUI trong hệ thống metallurgy.
  *
- * Mỗi loại GUI (ForgeGui, ...) extend class này,
- * implement buildLayout() để setup slots và onClick() để handle click.
+ * Hỗ trợ real-time refresh qua {@link #startRefreshTask(long)} —
+ * subclass gọi trong open(), task sẽ tự hủy khi GUI đóng.
  */
 public abstract class MetallurgyGui {
 
     protected final HaoHanMetallurgy plugin;
     protected Inventory inventory;
+
+    /** Task refresh realtime — tự hủy khi onClose(). */
+    private BukkitTask refreshTask;
 
     protected MetallurgyGui(HaoHanMetallurgy plugin) {
         this.plugin = plugin;
@@ -23,20 +27,13 @@ public abstract class MetallurgyGui {
 
     // ── Lifecycle ─────────────────────────────────────────────
 
-    /**
-     * Xây dựng layout ban đầu.
-     * Gọi một lần khi tạo GUI.
-     */
     protected abstract void buildLayout();
 
-    /**
-     * Refresh nội dung GUI (progress bar, nhiệt độ, fuel, ...).
-     * Gọi mỗi tick hoặc khi state thay đổi.
-     */
     public abstract void refresh();
 
     /**
      * Mở GUI cho player.
+     * Subclass override để thêm startRefreshTask() nếu cần realtime.
      */
     public void open(Player player) {
         if (inventory == null) buildLayout();
@@ -45,31 +42,40 @@ public abstract class MetallurgyGui {
         plugin.getPluginLogger().debug("Opened " + getClass().getSimpleName() + " for " + player.getName());
     }
 
-    /**
-     * Xử lý click event. GuiManager route event vào đây.
-     */
     public abstract void onClick(InventoryClickEvent event);
 
     /**
-     * Xử lý khi player đóng inventory.
-     * Subclass override nếu cần cleanup.
+     * Gọi khi player đóng inventory — hủy refresh task tự động.
+     * Subclass override nếu cần cleanup thêm, nhưng PHẢI gọi super.onClose().
      */
-    public void onClose(InventoryCloseEvent event) {}
+    public void onClose(InventoryCloseEvent event) {
+        stopRefreshTask();
+    }
+
+    // ── Refresh task helpers ──────────────────────────────────
+
+    /**
+     * Bắt đầu refresh GUI mỗi {@code intervalTicks} ticks.
+     * Gọi trong open() của subclass.
+     */
+    protected final void startRefreshTask(long intervalTicks) {
+        stopRefreshTask();
+        refreshTask = plugin.getServer().getScheduler()
+            .runTaskTimer(plugin, this::refresh, intervalTicks, intervalTicks);
+    }
+
+    protected final void stopRefreshTask() {
+        if (refreshTask != null && !refreshTask.isCancelled()) {
+            refreshTask.cancel();
+        }
+        refreshTask = null;
+    }
 
     // ── Helpers ───────────────────────────────────────────────
 
-    /**
-     * Điền một slot bằng ItemStack.
-     * Subclass dùng method này để không truy cập inventory trực tiếp.
-     */
     protected void setSlot(int slot, org.bukkit.inventory.ItemStack item) {
-        if (inventory != null) {
-            inventory.setItem(slot, item);
-        }
+        if (inventory != null) inventory.setItem(slot, item);
     }
 
-    /** Lấy inventory đang dùng. */
-    public Inventory getInventory() {
-        return inventory;
-    }
+    public Inventory getInventory() { return inventory; }
 }

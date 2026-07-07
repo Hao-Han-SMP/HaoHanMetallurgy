@@ -71,6 +71,9 @@ public class AncientForge extends Machine {
                 displayItem.setItemMeta(meta);
             }
             entity.setItemStack(displayItem);
+            entity.setItemDisplayTransform(org.bukkit.entity.ItemDisplay.ItemDisplayTransform.FIXED);
+            
+            plugin.getPluginLogger().info("Spawning forge model: material=" + displayItem.getType() + ", customModelData=" + (meta != null && meta.hasCustomModelData() ? meta.getCustomModelData() : "none"));
             
             // Set scale
             double sx = plugin.getConfigManager().getModelScaleX();

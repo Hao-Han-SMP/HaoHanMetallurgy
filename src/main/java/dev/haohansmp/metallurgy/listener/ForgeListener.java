@@ -96,25 +96,39 @@ public class ForgeListener implements Listener {
         if (ForgeStructure.isStructuralMaterial(blockType)) {
             Location coreLoc = findNearbyCoreCandidate(block);
             if (coreLoc != null) {
-                event.setCancelled(true);
+                // Chỉ xử lý tương tác lò rèn khi Blast Furnace đã nằm trên đế phẳng 3x3 Mud Bricks
+                if (!hasMudBrickBase(coreLoc)) {
+                    return;
+                }
+
                 Player player = event.getPlayer();
 
                 // Shift + Right-click -> Xem thông tin / gợi ý ghost blocks
                 if (player.isSneaking()) {
+                    event.setCancelled(true);
                     player.sendMessage("§8[§6Forge§8] " + ForgeStructure.getDescription());
                     preview.showMissing(player, coreLoc);
                     return;
                 }
 
                 // Regular Right-click -> Kích hoạt lò rèn
-                if (!player.hasPermission("haohansmp.metallurgy.use")) {
-                    player.sendMessage("§cBạn không có quyền dùng Ancient Forge.");
+                // Nếu cấu trúc CHƯA đầy đủ, ta KHÔNG cancel event để người chơi vẫn đặt được block để hoàn thành!
+                if (!ForgeStructure.validate(coreLoc)) {
+                    // Để tránh spam tin nhắn khi đang đặt khối xây dựng, ta chỉ gửi tin nhắn
+                    // khi họ click bằng tay không hoặc click trực tiếp vào lò Blast Furnace
+                    ItemStack itemInHand = player.getInventory().getItemInMainHand();
+                    if (itemInHand.getType() == Material.AIR || block.getType() == ForgeStructure.CONTROLLER_MATERIAL) {
+                        player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc lò rèn chưa đầy đủ!");
+                        player.sendMessage("§8[§6Forge§8] §7Hãy §eShift+Right-click §7vào lò để xem các khối còn thiếu.");
+                    }
                     return;
                 }
 
-                if (!ForgeStructure.validate(coreLoc)) {
-                    player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc chưa đầy đủ!");
-                    player.sendMessage("§8[§6Forge§8] §7Hãy §eShift+Right-click §7vào lò để xem các khối còn thiếu.");
+                // Cấu trúc ĐẦY ĐỦ -> Tiến hành kích hoạt lò rèn, lúc này mới cancel event
+                event.setCancelled(true);
+
+                if (!player.hasPermission("haohansmp.metallurgy.use")) {
+                    player.sendMessage("§cBạn không có quyền dùng Ancient Forge.");
                     return;
                 }
 
@@ -352,5 +366,20 @@ public class ForgeListener implements Listener {
             }
         }
         return null;
+    }
+
+    private boolean hasMudBrickBase(Location coreLoc) {
+        org.bukkit.World world = coreLoc.getWorld();
+        if (world == null) return false;
+        int cy = coreLoc.getBlockY() - 1;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Block block = world.getBlockAt(coreLoc.getBlockX() + dx, cy, coreLoc.getBlockZ() + dz);
+                if (block.getType() != Material.MUD_BRICKS) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

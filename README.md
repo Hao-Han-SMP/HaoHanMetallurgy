@@ -9,15 +9,16 @@
 ---
 ![alt text](image.png)
 
-## ⚙️ Yêu Cầu Hệ Thống (Requirements)
+## Yêu Cầu Hệ Thống (Requirements)
 *   **Server Software**: Paper, Purpur, hoặc Spigot (Khuyên dùng **Purpur / Paper 1.21.1**).
 *   **Java Version**: Java 21 hoặc mới hơn.
 *   **Tài Nguyên**: Bắt buộc cài đặt đầy đủ bộ ba: **Plugin**, **Datapack**, và **Resource Pack** đi kèm để hiển thị và hoạt động đầy đủ tính năng.
 
 ---
 
-## Hướng Dẫn Cài Đặt (Installation)
+## Hướng Dẫn Cài Đặt và Biên Dịch (Installation & Build)
 
+### 1. Dành cho Quản trị viên (Chạy bằng file JAR có sẵn)
 1.  **Cài đặt Plugin**:
     *   Tải file `.jar` biên dịch từ dự án này.
     *   Copy file `.jar` vào thư mục `/plugins/` của máy chủ.
@@ -30,42 +31,36 @@
     *   Tải gói [HaoHanMetallurgy_Resourcepack](https://github.com/Hao-Han-SMP/HaoHanMetallurgy_Resourcepack).
     *   Nén thành file `.zip` (hoặc để nguyên folder) bỏ vào thư mục `resourcepacks/` trên máy khách (Client) Minecraft của người chơi và kích hoạt nó.
 
+### 2. Dành cho Lập trình viên (Tự biên dịch từ mã nguồn)
+1.  **Yêu cầu chuẩn bị**:
+    *   Cài đặt **Java Development Kit (JDK) 21**.
+    *   Cài đặt **Apache Maven (3.9+)**.
+2.  **Các bước biên dịch từ A -> Z**:
+    *   Mở terminal/command prompt tại thư mục gốc của dự án plugin.
+    *   Chạy lệnh Maven để dọn dẹp và đóng gói:
+        ```bash
+        mvn clean package -DskipTests
+        ```
+    *   Sau khi build thành công (`BUILD SUCCESS`), file plugin đầu ra dạng `.jar` sẽ xuất hiện tại thư mục:
+        `target/HaoHanMetallurgy-1.0-SNAPSHOT.jar`
+3.  **Tự động hóa phát triển nhanh (PowerShell Script)**:
+    *   Dự án có sẵn một file script hỗ trợ tự động hóa phát triển: **`build_and_start.ps1`**.
+    *   *Lưu ý: Script này chứa các đường dẫn cố định được cấu hình sẵn theo máy cục bộ của tác giả. Để sử dụng trên thiết bị khác, bạn cần mở file script này lên và chỉnh sửa lại các biến `$projectDir`, `$serverPluginsDir`, `$serverDir` cho khớp với đường dẫn thư mục dự án và server của bạn.*
+    *   Chạy script bằng lệnh:
+        ```powershell
+        .\build_and_start.ps1
+        ```
+
 ---
 
-## Lệnh (Commands)
-*   `/metallurgy reload` (Quyền: `metallurgy.admin`): Nạp lại cấu hình `config.yml`.
-*   `/metallurgy give <player> <item_id> <amount>` (Quyền: `metallurgy.admin`): Nhận vật phẩm custom từ plugin (Ví dụ: Ember Ore).
+## Lệnh (Commands) và Quyền Hạn
+Tất cả các lệnh dưới đây yêu cầu quyền hạn quản trị viên: `haohansmp.metallurgy.admin` (mặc định OP sẽ có quyền này).
 
----
-
-## 🛠 Hướng Dẫn Phát Triển & Biên Dịch (For Developers)
-
-Nếu bạn là nhà phát triển muốn đóng góp mã nguồn hoặc tùy chỉnh plugin:
-
-### 1. Yêu cầu chuẩn bị
-*   Cài đặt **Java Development Kit (JDK) 21**.
-*   Cài đặt **Apache Maven (3.9+)**.
-
-### 2. Các bước biên dịch từ A -> Z
-1.  Mở terminal/command prompt tại thư mục gốc của dự án plugin.
-2.  Chạy lệnh Maven để dọn dẹp và đóng gói:
-    ```bash
-    mvn clean package -DskipTests
-    ```
-3.  Sau khi build thành công (`BUILD SUCCESS`), file plugin đầu ra dạng `.jar` sẽ xuất hiện tại thư mục:
-    `target/HaoHanMetallurgy-1.0-SNAPSHOT.jar`
-
-### 3. Tự động hóa phát triển nhanh (PowerShell Script)
-Dự án có sẵn một file script hỗ trợ tự động hóa phát triển: **`build_and_start.ps1`**.
-Mỗi khi chạy script này:
-*   Mã nguồn sẽ tự động được build lại bằng Maven.
-*   File `.jar` mới tự động ghi đè vào thư mục `/plugins/` của máy chủ test `F:\TestServer`.
-*   Tự động mở cửa sổ cmd mới chạy `start.bat` để khởi chạy server test ngay lập tức.
-
-Cách chạy:
-```powershell
-.\build_and_start.ps1
-```
+*   `/metallurgy info` — Hiển thị thông tin phiên bản plugin.
+*   `/metallurgy reload` — Tải lại toàn bộ cấu hình `config.yml` và các công thức rèn (recipes).
+*   `/metallurgy debug` — Bật/tắt chế độ debug (hiển thị logs chi tiết về nhiệt lượng/hoạt động).
+*   `/metallurgy list` — Hiển thị danh sách tất cả các lò rèn đang hoạt động trong thế giới.
+*   `/metallurgy give <player> <item_id> <amount>` — Nhận vật phẩm tùy chỉnh từ plugin (Ví dụ: Ember Ore).
 
 ---
 

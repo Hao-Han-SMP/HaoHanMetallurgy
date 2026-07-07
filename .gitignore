@@ -1,3 +1,4 @@
 /target/
 /.idea/
 /*.iml
+/build_and_start.ps1

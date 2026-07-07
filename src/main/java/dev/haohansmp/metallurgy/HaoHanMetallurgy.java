@@ -8,6 +8,7 @@ import dev.haohansmp.metallurgy.item.ItemManager;
 import dev.haohansmp.metallurgy.listener.ChunkListener;
 import dev.haohansmp.metallurgy.listener.ForgeListener;
 import dev.haohansmp.metallurgy.listener.ProgressionListener;
+import dev.haohansmp.metallurgy.listener.VanillaFurnaceListener;
 import dev.haohansmp.metallurgy.machine.MachineManager;
 import dev.haohansmp.metallurgy.recipe.RecipeLoader;
 import dev.haohansmp.metallurgy.util.PluginLogger;
@@ -71,10 +72,10 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         guiManager = new GuiManager(this);
         getServer().getPluginManager().registerEvents(guiManager, this);
 
-        // 6. Forge-specific listeners
         getServer().getPluginManager().registerEvents(new ForgeListener(this), this);
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ProgressionListener(this), this);
+        getServer().getPluginManager().registerEvents(new VanillaFurnaceListener(this), this);
 
         // 7. Tick Engine (khởi động sau khi managers sẵn sàng)
         tickEngine = new TickEngine(this);

@@ -32,6 +32,7 @@ public class ConfigManager {
     // Progression config cache
     private Material emberOreMaterial;
     private Material soulOreMaterial;
+    private Material mithrilOreMaterial;
     private Map<String, Integer> miningRequirements;
 
     // Heat & Cooling capacities (Phase 5)
@@ -73,6 +74,7 @@ public class ConfigManager {
 
     public Material getEmberOreMaterial() { return emberOreMaterial; }
     public Material getSoulOreMaterial()  { return soulOreMaterial; }
+    public Material getMithrilOreMaterial() { return mithrilOreMaterial; }
     public Map<String, Integer> getMiningRequirements() { return miningRequirements; }
 
     public Map<Material, Integer> getFuelLimits() { return fuelLimits; }
@@ -130,6 +132,13 @@ public class ConfigManager {
         if (soulOreMaterial == null) {
             soulOreMaterial = Material.LAPIS_ORE;
             plugin.getPluginLogger().warn("Invalid soul-ore material in config. Defaulting to LAPIS_ORE.");
+        }
+
+        String mithrilOreName = config.getString("progression.ores.mithril-ore", "EMERALD_ORE");
+        mithrilOreMaterial = Material.matchMaterial(mithrilOreName);
+        if (mithrilOreMaterial == null) {
+            mithrilOreMaterial = Material.EMERALD_ORE;
+            plugin.getPluginLogger().warn("Invalid mithril-ore material in config. Defaulting to EMERALD_ORE.");
         }
 
         loadMiningRequirements();

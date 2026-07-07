@@ -1,0 +1,15 @@
+{
+  "id": "ancient_forge/mithril_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "material": "PRISMARINE_SHARD", "amount": 4 }
+  ],
+  "output": {
+    "custom_item": "mithril_ingot",
+    "amount": 1
+  },
+  "fuel_cost": 300,
+  "time_seconds": 15,
+  "min_temperature": 1000,
+  "fail_chance": 0.1
+}

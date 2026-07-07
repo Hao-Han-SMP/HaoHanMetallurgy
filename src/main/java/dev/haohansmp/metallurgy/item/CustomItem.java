@@ -49,6 +49,62 @@ public enum CustomItem {
         1006,
         "§bSoulsteel Pickaxe",
         List.of("§7Cúp tâm linh tối thượng.", "§7Đủ sức khai thác §dAncient Debris§7.", "§8Tier: §c3")
+    ),
+    COPPER_SLAG(
+        "copper_slag",
+        Material.BRICK,
+        1011,
+        "§cCopper Slag",
+        List.of("§7Sỉ đồng thu được từ nung quặng hao hụt.", "§8Dùng để làm cúp sỉ đồng.")
+    ),
+    IRON_SLAG(
+        "iron_slag",
+        Material.CLAY_BALL,
+        1012,
+        "§8Iron Slag",
+        List.of("§7Sỉ sắt thu được từ nung quặng hao hụt.", "§8Dùng để làm cúp sỉ sắt.")
+    ),
+    COPPER_SLAG_PICKAXE(
+        "copper_slag_pickaxe",
+        Material.STONE_PICKAXE,
+        1013,
+        "§cCopper Slag Pickaxe",
+        List.of("§7Cúp được đúc tạm thời từ sỉ đồng.", "§8Tier: §c3")
+    ),
+    COPPER_PICKAXE(
+        "copper_pickaxe",
+        Material.STONE_PICKAXE,
+        1014,
+        "§6Copper Pickaxe",
+        List.of("§7Cúp đồng tinh luyện chắc chắn.", "§8Tier: §c4")
+    ),
+    IRON_SLAG_PICKAXE(
+        "iron_slag_pickaxe",
+        Material.IRON_PICKAXE,
+        1015,
+        "§8Iron Slag Pickaxe",
+        List.of("§7Cúp được đúc tạm thời từ sỉ sắt.", "§8Tier: §c5")
+    ),
+    MITHRIL_SHARD(
+        "mithril_shard",
+        Material.PRISMARINE_SHARD,
+        1017,
+        "§bMithril Shard",
+        List.of("§7Mảnh quặng Mithril thô.", "§8Dùng để nung luyện Mithril Ingot.")
+    ),
+    MITHRIL_INGOT(
+        "mithril_ingot",
+        Material.IRON_INGOT,
+        1018,
+        "§bMithril Ingot",
+        List.of("§7Kim loại quý hiếm có độ bền vượt trội.", "§8Tier: §c8")
+    ),
+    MITHRIL_PICKAXE(
+        "mithril_pickaxe",
+        Material.DIAMOND_PICKAXE,
+        1019,
+        "§bMithril Pickaxe",
+        List.of("§7Cúp rèn từ Mithril tinh khiết.", "§7Đủ sức khai thác §5Ancient Debris§7.", "§8Tier: §c8")
     );
 
     private final String id;

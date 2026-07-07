@@ -46,6 +46,7 @@ public class RecipeLoader {
             plugin.saveResource("recipes/raw_copper_smelting.json", false);
             plugin.saveResource("recipes/raw_gold_smelting.json", false);
             plugin.saveResource("recipes/netherite_ingot_smelting.json", false);
+            plugin.saveResource("recipes/mithril_ingot_smelting.json", false);
         }
 
         File[] files;

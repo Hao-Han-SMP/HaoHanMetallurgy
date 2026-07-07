@@ -68,16 +68,33 @@ progression:
     ember-ore: "COPPER_ORE"
     # Mặc định dùng LAPIS_ORE làm Soul Ore
     soul-ore: "LAPIS_ORE"
+    # Mặc định dùng EMERALD_ORE làm Mithril Ore (quặng mới)
+    mithril-ore: "EMERALD_ORE"
   
   # Cấp độ công cụ tối thiểu để đào quặng thành công (không bị mất drop):
-  # 0: Bất kỳ cúp nào (Iron, Gold...)
-  # 1: Diamond Pickaxe trở lên
-  # 2: Embersteel Pickaxe trở lên
-  # 3: Soulsteel Pickaxe trở lên
+  # 1: Wooden Pickaxe
+  # 2: Stone Pickaxe / Gold Pickaxe
+  # 3: Copper Slag Pickaxe
+  # 4: Copper Pickaxe
+  # 5: Iron Slag Pickaxe
+  # 6: Iron Pickaxe
+  # 7: Diamond Pickaxe
+  # 8: Mithril Pickaxe (New Ore Pickaxe)
+  # 9: Netherite Pickaxe
   mining-requirements:
-    "minecraft:ancient_debris": 3  # Ancient Debris cần Soulsteel Pickaxe
-    "soul-ore": 2                  # Soul Ore cần Embersteel Pickaxe
-    "ember-ore": 1                 # Ember Ore cần Diamond Pickaxe
+    "minecraft:stone": 1
+    "minecraft:coal_ore": 1
+    "minecraft:deepslate_coal_ore": 1
+    "minecraft:copper_ore": 2
+    "minecraft:deepslate_copper_ore": 2
+    "minecraft:raw_copper_block": 2
+    "minecraft:iron_ore": 4
+    "minecraft:deepslate_iron_ore": 4
+    "minecraft:raw_iron_block": 4
+    "minecraft:diamond_ore": 6
+    "minecraft:deepslate_diamond_ore": 6
+    "mithril-ore": 7
+    "minecraft:ancient_debris": 8
 
 # ── Fail rate (Phase 5 — để trống ở Phase 1) ─────────────────
 fail:

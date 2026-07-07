@@ -37,6 +37,7 @@ public class ProgressionListener implements Listener {
         Material blockType = block.getType();
         Material emberOreMat = plugin.getConfigManager().getEmberOreMaterial();
         Material soulOreMat = plugin.getConfigManager().getSoulOreMaterial();
+        Material mithrilOreMat = plugin.getConfigManager().getMithrilOreMaterial();
 
         // Xác định loại quặng luyện kim đang đào
         String oreKey = null;
@@ -44,8 +45,16 @@ public class ProgressionListener implements Listener {
             oreKey = "ember_ore";
         } else if (blockType == soulOreMat) {
             oreKey = "soul_ore";
+        } else if (blockType == mithrilOreMat) {
+            oreKey = "mithril-ore";
         } else if (blockType == Material.ANCIENT_DEBRIS) {
             oreKey = "minecraft:ancient_debris";
+        } else {
+            // Kiểm tra các quặng vanilla khác có giới hạn trong config không
+            String blockKey = blockType.getKey().toString();
+            if (plugin.getConfigManager().getMiningRequirements().containsKey(blockKey)) {
+                oreKey = blockKey;
+            }
         }
 
         if (oreKey == null) return; // Không phải quặng giới hạn
@@ -82,8 +91,12 @@ public class ProgressionListener implements Listener {
             event.setDropItems(false); // Chặn lapis rơi ra
             ItemStack crystal = plugin.getItemManager().createItem(CustomItem.SOUL_CRYSTAL, getDropAmount(player));
             block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), crystal);
+        } else if (blockType == mithrilOreMat) {
+            event.setDropItems(false); // Chặn emerald rơi ra
+            ItemStack shard = plugin.getItemManager().createItem(CustomItem.MITHRIL_SHARD, getDropAmount(player));
+            block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), shard);
         }
-        // Ancient Debris vẫn rơi ra chính nó (cấp bậc 3 đạt yêu cầu thì drop bình thường)
+        // Các khối khác như Sắt, Đồng vanilla vẫn rơi ra bình thường nếu đủ cấp bậc
     }
 
     /**
@@ -98,16 +111,24 @@ public class ProgressionListener implements Listener {
         Optional<CustomItem> customOpt = plugin.getItemManager().getCustomItem(tool);
         if (customOpt.isPresent()) {
             CustomItem ci = customOpt.get();
-            if (ci == CustomItem.SOULSTEEL_PICKAXE) return 3;
-            if (ci == CustomItem.EMBERSTEEL_PICKAXE) return 2;
+            if (ci == CustomItem.MITHRIL_PICKAXE) return 8;
+            if (ci == CustomItem.IRON_SLAG_PICKAXE) return 5;
+            if (ci == CustomItem.COPPER_PICKAXE) return 4;
+            if (ci == CustomItem.COPPER_SLAG_PICKAXE) return 3;
+            if (ci == CustomItem.SOULSTEEL_PICKAXE) return 8;
+            if (ci == CustomItem.EMBERSTEEL_PICKAXE) return 4;
         }
 
         // Kiểm tra Vanilla Pickaxes
         Material type = tool.getType();
-        if (type == Material.NETHERITE_PICKAXE) return 3;
-        if (type == Material.DIAMOND_PICKAXE) return 1;
+        if (type == Material.NETHERITE_PICKAXE) return 9;
+        if (type == Material.DIAMOND_PICKAXE) return 7;
+        if (type == Material.IRON_PICKAXE) return 6;
+        if (type == Material.GOLDEN_PICKAXE) return 2;
+        if (type == Material.STONE_PICKAXE) return 2;
+        if (type == Material.WOODEN_PICKAXE) return 1;
 
-        return 0; // Bất kỳ cúp nào khác (Iron, Stone, Gold...)
+        return 0; // Bất kỳ công cụ nào khác hoặc tay không
     }
 
     /**
@@ -115,9 +136,15 @@ public class ProgressionListener implements Listener {
      */
     private String getToolTierName(int tier) {
         return switch (tier) {
-            case 1 -> "§bDiamond Pickaxe";
-            case 2 -> "§6Embersteel Pickaxe";
-            case 3 -> "§bSoulsteel Pickaxe";
+            case 1 -> "§fWooden Pickaxe";
+            case 2 -> "§7Stone Pickaxe";
+            case 3 -> "§cCopper Slag Pickaxe";
+            case 4 -> "§6Copper Pickaxe";
+            case 5 -> "§8Iron Slag Pickaxe";
+            case 6 -> "§fIron Pickaxe";
+            case 7 -> "§bDiamond Pickaxe";
+            case 8 -> "§bMithril Pickaxe";
+            case 9 -> "§5Netherite Pickaxe";
             default -> "§7Any Pickaxe";
         };
     }

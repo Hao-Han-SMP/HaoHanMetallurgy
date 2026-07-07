@@ -92,70 +92,48 @@ public class ForgeListener implements Listener {
             return;
         }
 
-        // ── Xử lý lò Blast Furnace click ─────────────────────
-        if (blockType != ForgeStructure.CONTROLLER_MATERIAL) return;
+        // ── Xử lý kích hoạt lò (Click vào block của cấu trúc chưa kích hoạt) ──
+        if (ForgeStructure.isStructuralMaterial(blockType)) {
+            Location coreLoc = findNearbyCoreCandidate(block);
+            if (coreLoc != null) {
+                event.setCancelled(true);
+                Player player = event.getPlayer();
 
-        Player player = event.getPlayer();
-        Location loc = block.getLocation();
-
-        // ── Shift + right-click → show structure info + ghost blocks ────
-        if (player.isSneaking()) {
-            event.setCancelled(true);
-            boolean isActive = plugin.getMachineManager().exists(loc);
-            if (isActive) {
-                var forge = (AncientForge) plugin.getMachineManager().get(loc).orElse(null);
-                if (forge != null) {
-                    player.sendMessage("§8[§6Forge§8] §7Trạng thái: §e" + forge.getState()
-                        + " §7| §cTemp: §f" + forge.getTemperature() + "°C"
-                        + " §7| §6Fuel: §f" + forge.getFuelTicksRemaining() + " ticks");
+                // Shift + Right-click -> Xem thông tin / gợi ý ghost blocks
+                if (player.isSneaking()) {
+                    player.sendMessage("§8[§6Forge§8] " + ForgeStructure.getDescription());
+                    preview.showMissing(player, coreLoc);
+                    return;
                 }
-            } else {
-                player.sendMessage("§8[§6Forge§8] " + ForgeStructure.getDescription());
-                // Hiển thị ghost blocks đỏ cho các block còn thiếu
-                preview.showMissing(player, loc);
-            }
-            return;
-        }
 
-        // ── Regular right-click ──────────────────────────────
+                // Regular Right-click -> Kích hoạt lò rèn
+                if (!player.hasPermission("haohansmp.metallurgy.use")) {
+                    player.sendMessage("§cBạn không có quyền dùng Ancient Forge.");
+                    return;
+                }
 
-        // 1. Đã là machine → mở GUI
-        if (plugin.getMachineManager().exists(loc)) {
-            event.setCancelled(true);
-            AncientForge forge = (AncientForge) plugin.getMachineManager().get(loc).orElse(null);
-            if (forge == null) return;
-            plugin.getGuiManager().open(player, new ForgeGui(plugin, forge));
-            return;
-        }
+                if (!ForgeStructure.validate(coreLoc)) {
+                    player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc chưa đầy đủ!");
+                    player.sendMessage("§8[§6Forge§8] §7Hãy §eShift+Right-click §7vào lò để xem các khối còn thiếu.");
+                    return;
+                }
 
-        // 2. Chưa phải machine → kiểm tra quyền
-        if (!player.hasPermission("haohansmp.metallurgy.use")) {
-            player.sendMessage("§cBạn không có quyền dùng Ancient Forge.");
-            return;
-        }
+                // Kiểm tra xem blast furnace core có chứa vật phẩm nào không
+                Block coreBlock = coreLoc.getBlock();
+                if (coreBlock.getState() instanceof org.bukkit.block.BlastFurnace bf) {
+                    boolean hasItems = java.util.Arrays.stream(bf.getInventory().getContents())
+                        .anyMatch(item -> item != null && item.getType() != Material.AIR);
+                    if (hasItems) {
+                        player.sendMessage("§8[§6Forge§8] §c⚠ Vui lòng lấy hết vật phẩm trong lò Blast Furnace ra trước khi kích hoạt Lò Rèn Cổ Đại!");
+                        player.playSound(coreLoc, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+                        return;
+                    }
+                }
 
-        // 3. Cấu trúc không hợp lệ → hint + ghost blocks
-        if (!ForgeStructure.validate(loc)) {
-            player.sendMessage("§8[§6Forge§8] §7Cấu trúc chưa đủ. "
-                + "§eShift+Right-click §7để xem ghost blocks.");
-            return;
-        }
-
-        // Kiểm tra xem blast furnace có chứa vật phẩm nào bên trong không
-        if (block.getState() instanceof org.bukkit.block.BlastFurnace bf) {
-            boolean hasItems = java.util.Arrays.stream(bf.getInventory().getContents())
-                .anyMatch(item -> item != null && item.getType() != Material.AIR);
-            if (hasItems) {
-                player.sendMessage("§8[§6Forge§8] §c⚠ Vui lòng lấy hết vật phẩm trong lò Blast Furnace ra trước khi kích hoạt Lò Rèn Cổ Đại!");
-                player.playSound(loc, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
-                return;
+                preview.clearFor(player); // Xóa các ghost blocks gợi ý trước đó
+                activateForge(player, coreBlock, coreLoc);
             }
         }
-
-        // 4. Cấu trúc hợp lệ → activate
-        event.setCancelled(true);
-        preview.clearFor(player); // xóa ghost blocks trước khi activate
-        activateForge(player, block, loc);
     }
 
     // ── Block Break ───────────────────────────────────────────
@@ -356,5 +334,23 @@ public class ForgeListener implements Listener {
 
     private String formatLoc(Location l) {
         return l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ();
+    }
+
+    private Location findNearbyCoreCandidate(Block clickedBlock) {
+        // Quét bán kính nhỏ dy từ -2 đến 1, dx/dz từ -1 đến 1 để tìm Blast Furnace core chưa kích hoạt
+        for (int dy = -2; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    Block checkBlock = clickedBlock.getRelative(dx, dy, dz);
+                    if (checkBlock.getType() == ForgeStructure.CONTROLLER_MATERIAL) {
+                        Location coreLoc = checkBlock.getLocation();
+                        if (!plugin.getMachineManager().exists(coreLoc)) {
+                            return coreLoc;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

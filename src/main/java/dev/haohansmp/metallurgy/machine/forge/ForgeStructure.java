@@ -44,47 +44,47 @@ public final class ForgeStructure {
     /** Danh sách tất cả blocks bắt buộc (không kể controller). */
     public static final List<BlockOffset> REQUIRED_BLOCKS = List.of(
         // Base (Y = -1): 9 Mud Bricks
-        new BlockOffset(-1, -1, 0, Material.MUD_BRICKS),
-        new BlockOffset( 0, -1, 0, Material.MUD_BRICKS),
-        new BlockOffset( 1, -1, 0, Material.MUD_BRICKS),
-        new BlockOffset(-1, -1, 1, Material.MUD_BRICKS),
-        new BlockOffset( 0, -1, 1, Material.MUD_BRICKS),
-        new BlockOffset( 1, -1, 1, Material.MUD_BRICKS),
-        new BlockOffset(-1, -1, 2, Material.MUD_BRICKS),
-        new BlockOffset( 0, -1, 2, Material.MUD_BRICKS),
-        new BlockOffset( 1, -1, 2, Material.MUD_BRICKS),
+        new BlockOffset(-1, -1, -1, Material.MUD_BRICKS),
+        new BlockOffset( 0, -1, -1, Material.MUD_BRICKS),
+        new BlockOffset( 1, -1, -1, Material.MUD_BRICKS),
+        new BlockOffset(-1, -1,  0, Material.MUD_BRICKS),
+        new BlockOffset( 0, -1,  0, Material.MUD_BRICKS),
+        new BlockOffset( 1, -1,  0, Material.MUD_BRICKS),
+        new BlockOffset(-1, -1,  1, Material.MUD_BRICKS),
+        new BlockOffset( 0, -1,  1, Material.MUD_BRICKS),
+        new BlockOffset( 1, -1,  1, Material.MUD_BRICKS),
 
         // Y = 0: 8 Cobblestones (Controller là Blast Furnace ở 0,0,0)
-        new BlockOffset(-1,  0, 0, Material.COBBLESTONE),
-        new BlockOffset( 1,  0, 0, Material.COBBLESTONE),
-        new BlockOffset(-1,  0, 1, Material.COBBLESTONE),
-        new BlockOffset( 0,  0, 1, Material.COBBLESTONE),
-        new BlockOffset( 1,  0, 1, Material.COBBLESTONE),
-        new BlockOffset(-1,  0, 2, Material.COBBLESTONE),
-        new BlockOffset( 0,  0, 2, Material.COBBLESTONE),
-        new BlockOffset( 1,  0, 2, Material.COBBLESTONE),
+        new BlockOffset(-1,  0, -1, Material.COBBLESTONE),
+        new BlockOffset( 0,  0, -1, Material.COBBLESTONE),
+        new BlockOffset( 1,  0, -1, Material.COBBLESTONE),
+        new BlockOffset(-1,  0,  0, Material.COBBLESTONE),
+        new BlockOffset( 1,  0,  0, Material.COBBLESTONE),
+        new BlockOffset(-1,  0,  1, Material.COBBLESTONE),
+        new BlockOffset( 0,  0,  1, Material.COBBLESTONE),
+        new BlockOffset( 1,  0,  1, Material.COBBLESTONE),
 
         // Y = 1: Cauldron + 8 Cobblestones
-        new BlockOffset( 0,  1, 0, Material.CAULDRON),
-        new BlockOffset(-1,  1, 0, Material.COBBLESTONE),
-        new BlockOffset( 1,  1, 0, Material.COBBLESTONE),
-        new BlockOffset(-1,  1, 1, Material.COBBLESTONE),
-        new BlockOffset( 0,  1, 1, Material.COBBLESTONE),
-        new BlockOffset( 1,  1, 1, Material.COBBLESTONE),
-        new BlockOffset(-1,  1, 2, Material.COBBLESTONE),
-        new BlockOffset( 0,  1, 2, Material.COBBLESTONE),
-        new BlockOffset( 1,  1, 2, Material.COBBLESTONE),
+        new BlockOffset( 0,  1,  0, Material.CAULDRON),
+        new BlockOffset(-1,  1, -1, Material.COBBLESTONE),
+        new BlockOffset( 0,  1, -1, Material.COBBLESTONE),
+        new BlockOffset( 1,  1, -1, Material.COBBLESTONE),
+        new BlockOffset(-1,  1,  0, Material.COBBLESTONE),
+        new BlockOffset( 1,  1,  0, Material.COBBLESTONE),
+        new BlockOffset(-1,  1,  1, Material.COBBLESTONE),
+        new BlockOffset( 0,  1,  1, Material.COBBLESTONE),
+        new BlockOffset( 1,  1,  1, Material.COBBLESTONE),
 
         // Y = 2: 9 Cobblestones
-        new BlockOffset(-1,  2, 0, Material.COBBLESTONE),
-        new BlockOffset( 0,  2, 0, Material.COBBLESTONE),
-        new BlockOffset( 1,  2, 0, Material.COBBLESTONE),
-        new BlockOffset(-1,  2, 1, Material.COBBLESTONE),
-        new BlockOffset( 0,  2, 1, Material.COBBLESTONE),
-        new BlockOffset( 1,  2, 1, Material.COBBLESTONE),
-        new BlockOffset(-1,  2, 2, Material.COBBLESTONE),
-        new BlockOffset( 0,  2, 2, Material.COBBLESTONE),
-        new BlockOffset( 1,  2, 2, Material.COBBLESTONE)
+        new BlockOffset(-1,  2, -1, Material.COBBLESTONE),
+        new BlockOffset( 0,  2, -1, Material.COBBLESTONE),
+        new BlockOffset( 1,  2, -1, Material.COBBLESTONE),
+        new BlockOffset(-1,  2,  0, Material.COBBLESTONE),
+        new BlockOffset( 0,  2,  0, Material.COBBLESTONE),
+        new BlockOffset( 1,  2,  0, Material.COBBLESTONE),
+        new BlockOffset(-1,  2,  1, Material.COBBLESTONE),
+        new BlockOffset( 0,  2,  1, Material.COBBLESTONE),
+        new BlockOffset( 1,  2,  1, Material.COBBLESTONE)
     );
 
     // Prevent instantiation
@@ -166,11 +166,11 @@ public final class ForgeStructure {
     /** Mô tả cấu trúc cho player. */
     public static String getDescription() {
         return """
-                §6§lCấu trúc Lò Rèn Cổ Đại mới (3x2x4):
-                §7• §eBlast Furnace (Core) §7tại Y=0
-                §7• §e6× Mud Bricks §7làm đế tại Y=-1
+                §6§lCấu trúc Lò Rèn Cổ Đại mới (3x3x4):
+                §7• §eBlast Furnace (Core) §7tại Y=0 ở trung tâm
+                §7• §e9× Mud Bricks §7làm đế phẳng tại Y=-1
                 §7• §eCauldron §7ngay trên Blast Furnace tại Y=1
-                §7• §e16× Cobblestone §7bọc xung quanh
-                §7Shift + Right-click Blast Furnace để xem gợi ý xây lò.""";
+                §7• §e25× Cobblestone §7bao bọc xung quanh đặc khít
+                §7Shift + Right-click để xem gợi ý xây lò.""";
     }
 }

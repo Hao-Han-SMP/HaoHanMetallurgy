@@ -10,6 +10,7 @@
   },
   "fuel_cost": 100,
   "time_seconds": 10,
-  "min_temperature": 500,
-  "fail_chance": 0.1
+  "min_temperature": 1080,
+  "max_temperature": 1250,
+  "fail_chance": 0.08
 }

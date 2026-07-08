@@ -1,5 +1,7 @@
 /target/
+**/target/
 /.idea/
 /*.iml
 /build_and_start.ps1
 /build.ps1
+dependency-reduced-pom.xml

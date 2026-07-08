@@ -44,8 +44,23 @@ public abstract class Machine {
         this.type = type;
 
         // Khởi tạo inventory cố định cho máy này (27 slots)
-        String title = plugin.getConfigManager().getForgeTitle();
-        this.inventory = Bukkit.createInventory(null, 27, title);
+        if (plugin.getConfigManager().isForgeCustomGuiEnabled()) {
+            String prefix = plugin.getConfigManager().getForgeCustomGuiPrefix();
+            String glyph = plugin.getConfigManager().getForgeCustomGuiGlyph();
+            org.bukkit.NamespacedKey fontKey = plugin.getConfigManager().getForgeCustomGuiFont();
+            if (prefix != null && glyph != null && fontKey != null) {
+                String fullText = prefix + glyph;
+                net.kyori.adventure.text.Component titleComp = net.kyori.adventure.text.Component.text(fullText)
+                    .font(net.kyori.adventure.key.Key.key(fontKey.getNamespace(), fontKey.getKey()));
+                this.inventory = Bukkit.createInventory(null, 27, titleComp);
+            } else {
+                String title = plugin.getConfigManager().getForgeTitle();
+                this.inventory = Bukkit.createInventory(null, 27, title);
+            }
+        } else {
+            String title = plugin.getConfigManager().getForgeTitle();
+            this.inventory = Bukkit.createInventory(null, 27, title);
+        }
     }
 
     // ── Lifecycle (called by TickEngine) ──────────────────────
@@ -208,6 +223,12 @@ public abstract class Machine {
         }
     }
 
+    public void boostProgressTicks(int amount) {
+        if (state == MachineState.WORKING) {
+            this.progressTicks = Math.min(totalTicks, this.progressTicks + amount);
+        }
+    }
+
     public void setState(MachineState state) {
         this.state = state;
     }
@@ -292,6 +313,29 @@ public abstract class Machine {
         // 4. Giới hạn nhiệt độ tối đa theo Nhiên liệu hoạt động và khối làm mát
         int currentLimit = Math.min(activeFuelLimit, maxTemp - coolers * 100);
 
+        // Tiêu thụ nhiên liệu động từ slot nhiên liệu (nếu hết ticks)
+        if (fuelTicksRemaining <= 0 && (state == MachineState.WORKING || temperature < currentLimit)) {
+            int fuelSlot = dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_FUEL;
+            ItemStack fuelItem = inventory.getItem(fuelSlot);
+            if (fuelItem != null && fuelItem.getType() != Material.AIR) {
+                Material mat = fuelItem.getType();
+                int ticksPerItem = plugin.getConfigManager().getFuelTicks(mat);
+                var coolants = plugin.getConfigManager().getCoolants();
+                if (ticksPerItem > 0 && !coolants.containsKey(mat)) {
+                    // Tiêu thụ đúng 1 vật phẩm
+                    if (fuelItem.getAmount() > 1) {
+                        fuelItem.setAmount(fuelItem.getAmount() - 1);
+                        inventory.setItem(fuelSlot, fuelItem);
+                    } else {
+                        inventory.setItem(fuelSlot, null);
+                    }
+                    this.fuelTicksRemaining = ticksPerItem;
+                    this.activeFuelLimit = plugin.getConfigManager().getFuelLimits().getOrDefault(mat, 2000);
+                    currentLimit = Math.min(activeFuelLimit, maxTemp - coolers * 100);
+                }
+            }
+        }
+
         if (fuelTicksRemaining > 0) {
             fuelTicksRemaining--;
             if (temperature < currentLimit) {
@@ -318,7 +362,36 @@ public abstract class Machine {
 
         // Kiểm tra nhiệt độ tối đa (Quá nhiệt -> Hỏng quặng thành Xỉ)
         if (temperature > currentRecipe.getMaxTemperature()) {
-            ruinRecipe("§c⚠ Lò quá nhiệt! Nguyên liệu của bạn đã bị thiêu cháy thành xỉ.", "§c⚠ Lò quá nhiệt! Quặng đã bị cháy hỏng!");
+            // Thử tự làm mát khẩn cấp bằng vạc nước xung quanh trước khi làm hỏng công thức
+            boolean cooled = false;
+            int[][] adjacentOffsets = {{1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
+            for (int[] offset : adjacentOffsets) {
+                org.bukkit.block.Block adjBlock = location.clone().add(offset[0], offset[1], offset[2]).getBlock();
+                if (adjBlock.getType() == org.bukkit.Material.WATER_CAULDRON) {
+                    if (adjBlock.getBlockData() instanceof org.bukkit.block.data.Levelled levelled) {
+                        int level = levelled.getLevel();
+                        if (level > 1) {
+                            levelled.setLevel(level - 1);
+                            adjBlock.setBlockData(levelled, false);
+                        } else {
+                            adjBlock.setType(org.bukkit.Material.CAULDRON, false);
+                        }
+                        this.temperature = Math.max(0, this.temperature - 200);
+                        if (location.getWorld() != null) {
+                            location.getWorld().playSound(location, org.bukkit.Sound.BLOCK_LAVA_EXTINGUISH, 1.0f, 1.0f);
+                            location.getWorld().spawnParticle(org.bukkit.Particle.LARGE_SMOKE, location.clone().add(0.5, 1.5, 0.5), 15, 0.25, 0.4, 0.25, 0.02);
+                        }
+                        cooled = true;
+                        break;
+                    }
+                }
+            }
+
+            if (cooled) {
+                return; // Đã hạ nhiệt thành công, bỏ qua quá nhiệt ở tick này
+            }
+
+            ruinRecipe("\u00a7c\u26a0 L\u00f2 qu\u00e1 nhi\u1ec7t! Ph\u1ea7n kim lo\u1ea1i t\u1ed1t b\u1ecb m\u1ea5t, ch\u1ec9 c\u00f2n s\u1ec9 kim lo\u1ea1i.", "\u00a7c\u26a0 L\u00f2 qu\u00e1 nhi\u1ec7t!");
             return;
         }
 
@@ -329,7 +402,7 @@ public abstract class Machine {
             if (plugin.getConfigManager().isFailEnabled() && currentRecipe.getFailChance() > 0.0) {
                 double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
                 if (rand < currentRecipe.getFailChance()) {
-                    ruinRecipe("§c⚠ Luyện kim thất bại! Nguyên liệu đã hóa thành xỉ thải.", "§c⚠ Luyện kim thất bại!");
+                    ruinRecipe("\u00a7c\u26a0 Luy\u1ec7n kim th\u1ea5t b\u1ea1i! Ch\u1ec9 thu \u0111\u01b0\u1ee3c s\u1ec9 kim lo\u1ea1i.", "\u00a7c\u26a0 Luy\u1ec7n kim th\u1ea5t b\u1ea1i!");
                     return;
                 }
             }
@@ -349,22 +422,26 @@ public abstract class Machine {
         }
 
         // Tạo vật phẩm Slag (Xỉ Thải) bằng Than củi
-        ItemStack slag = new ItemStack(Material.CHARCOAL, 1);
+        ItemStack slag = new ItemStack(Material.RAW_IRON, 1);
         org.bukkit.inventory.meta.ItemMeta meta = slag.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName("§8Slag (Xỉ Thải)");
+            String metalName = currentRecipe == null ? "kim lo\u1ea1i" : currentRecipe.getOutput().material().name()
+                    .toLowerCase(java.util.Locale.ROOT)
+                    .replace("_ingot", "")
+                    .replace("_", " ");
+            meta.setDisplayName("\u00a78S\u1ec9 kim lo\u1ea1i");
             meta.setLore(java.util.List.of(
-                    "§7Sản phẩm hỏng trong quá trình luyện kim!",
-                    "§7Hãy cố giữ nhiệt độ ổn định hoặc kiểm tra chất lượng quặng."));
+                    "\u00a77T\u1ea1p ch\u1ea5t c\u00f2n l\u1ea1i sau khi luy\u1ec7n " + metalName + ".",
+                    "\u00a77Kh\u00f4ng ph\u1ea3i ph\u1ebf ph\u1ea9m h\u1ecfng ho\u00e0n to\u00e0n."));
             slag.setItemMeta(meta);
         }
 
         // Đặt vào ô output (slot 15) hoặc drop ra đất nếu đầy
-        ItemStack existing = inventory.getItem(15);
+        int slagSlot = dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_SLAG;
+        ItemStack existing = inventory.getItem(slagSlot);
         if (existing == null || existing.getType() == Material.AIR) {
-            inventory.setItem(15, slag);
-        } else if (existing.getType() == Material.CHARCOAL && existing.hasItemMeta()
-                && "§8Slag (Xỉ Thải)".equals(existing.getItemMeta().getDisplayName())) {
+            inventory.setItem(slagSlot, slag);
+        } else if (existing.isSimilar(slag)) {
             existing.setAmount(Math.min(existing.getAmount() + 1, existing.getMaxStackSize()));
         } else {
             if (location.getWorld() != null) {
@@ -377,7 +454,7 @@ public abstract class Machine {
             location.getWorld().getPlayers().stream()
                     .filter(p -> p.getLocation().distanceSquared(location) < 15 * 15)
                     .forEach(p -> {
-                        p.sendMessage("§8[§6Forge§8] " + chatMessage);
+                        p.sendMessage("\u00a78[\u00a76Forge\u00a78] " + chatMessage);
                         p.sendActionBar(actionBarMessage);
                     });
         }

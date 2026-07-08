@@ -17,6 +17,7 @@ public class MachineManager {
 
     /** Map từ location của block chính → Machine instance. */
     private final Map<Location, Machine> machines = new LinkedHashMap<>();
+    private final Map<BlockKey, dev.haohansmp.metallurgy.machine.forge.AncientForge> forgeBlockIndex = new HashMap<>();
 
     public MachineManager(HaoHanMetallurgy plugin) {
         this.plugin = plugin;
@@ -35,6 +36,9 @@ public class MachineManager {
             return false;
         }
         machines.put(loc, machine);
+        if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+            indexForge(forge);
+        }
         plugin.getPluginLogger().debug("Registered machine " + machine.getType() + " at " + loc);
         return true;
     }
@@ -48,6 +52,7 @@ public class MachineManager {
         if (removed != null) {
             plugin.getPluginLogger().debug("Unregistered machine at " + location);
             if (removed instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+                unindexForge(forge);
                 forge.removeDisplayEntity();
             }
         }
@@ -64,6 +69,10 @@ public class MachineManager {
         return machines.containsKey(location);
     }
 
+    public Optional<dev.haohansmp.metallurgy.machine.forge.AncientForge> getForgeAtBlock(Location location) {
+        return Optional.ofNullable(forgeBlockIndex.get(BlockKey.from(location)));
+    }
+
     /** Tất cả machines đang active (unmodifiable). */
     public Collection<Machine> getAll() {
         return Collections.unmodifiableCollection(machines.values());
@@ -72,6 +81,44 @@ public class MachineManager {
     /** Số lượng machine đang active. */
     public int count() {
         return machines.size();
+    }
+
+    private void indexForge(dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+        Location coreLoc = forge.getLocation();
+        forgeBlockIndex.put(BlockKey.from(coreLoc), forge);
+
+        int rotation = forge.getRotation();
+        for (dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset offset
+                : dev.haohansmp.metallurgy.machine.forge.ForgeStructure.REQUIRED_BLOCKS) {
+            Location blockLoc = coreLoc.clone().add(rotatedX(offset, rotation), offset.dy(), rotatedZ(offset, rotation));
+            forgeBlockIndex.put(BlockKey.from(blockLoc), forge);
+        }
+    }
+
+    private void unindexForge(dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
+        Location coreLoc = forge.getLocation();
+        forgeBlockIndex.remove(BlockKey.from(coreLoc));
+
+        int rotation = forge.getRotation();
+        for (dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset offset
+                : dev.haohansmp.metallurgy.machine.forge.ForgeStructure.REQUIRED_BLOCKS) {
+            Location blockLoc = coreLoc.clone().add(rotatedX(offset, rotation), offset.dy(), rotatedZ(offset, rotation));
+            forgeBlockIndex.remove(BlockKey.from(blockLoc));
+        }
+    }
+
+    private int rotatedX(dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset offset, int rotation) {
+        if (rotation == 90) return -offset.dz();
+        if (rotation == 180) return -offset.dx();
+        if (rotation == 270) return offset.dz();
+        return offset.dx();
+    }
+
+    private int rotatedZ(dev.haohansmp.metallurgy.machine.forge.ForgeStructure.BlockOffset offset, int rotation) {
+        if (rotation == 90) return offset.dx();
+        if (rotation == 180) return -offset.dz();
+        if (rotation == 270) return -offset.dx();
+        return offset.dz();
     }
 
     // ── Tick ──────────────────────────────────────────────────
@@ -221,5 +268,12 @@ public class MachineManager {
         }
 
         plugin.getPluginLogger().info("Restored all active machines from machines.yml.");
+    }
+
+    private record BlockKey(UUID worldId, int x, int y, int z) {
+        static BlockKey from(Location location) {
+            UUID worldId = location.getWorld() == null ? new UUID(0L, 0L) : location.getWorld().getUID();
+            return new BlockKey(worldId, location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        }
     }
 }

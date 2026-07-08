@@ -9,6 +9,7 @@ import dev.haohansmp.metallurgy.listener.ChunkListener;
 import dev.haohansmp.metallurgy.listener.ForgeListener;
 import dev.haohansmp.metallurgy.listener.ProgressionListener;
 import dev.haohansmp.metallurgy.listener.VanillaFurnaceListener;
+import dev.haohansmp.metallurgy.listener.VanillaToolListener;
 import dev.haohansmp.metallurgy.machine.MachineManager;
 import dev.haohansmp.metallurgy.recipe.RecipeLoader;
 import dev.haohansmp.metallurgy.util.PluginLogger;
@@ -54,6 +55,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         pluginLogger = new PluginLogger(this);
         pluginLogger.info("=== HaoHan Metallurgy ===");
         pluginLogger.info("Initializing Core Engine...");
+        if (Boolean.getBoolean("haohan.metallurgy.ignite")) {
+            pluginLogger.info("Ignite patch layer detected. Optional server internals bridge is active.");
+        }
 
         // 2. Config
         configManager = new ConfigManager(this);
@@ -76,6 +80,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ProgressionListener(this), this);
         getServer().getPluginManager().registerEvents(new VanillaFurnaceListener(this), this);
+        getServer().getPluginManager().registerEvents(new VanillaToolListener(this), this);
 
         // 7. Tick Engine (khởi động sau khi managers sẵn sàng)
         tickEngine = new TickEngine(this);

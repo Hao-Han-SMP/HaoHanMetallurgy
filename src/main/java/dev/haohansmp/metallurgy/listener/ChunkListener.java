@@ -61,7 +61,7 @@ public class ChunkListener implements Listener {
             machine.resume();
             if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
                 forge.ensureBarrierBlocks();
-                forge.refreshDisplayEntity();
+                forge.spawnDisplayEntity();
             }
             plugin.getPluginLogger().debug(
                 "Resumed machine " + machine.getType()

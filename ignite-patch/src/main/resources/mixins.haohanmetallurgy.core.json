@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8.7",
+  "package": "dev.haohansmp.metallurgy.ignite.mixin",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_21",
+  "server": [
+    "CraftServerInjectMixin"
+  ]
+}

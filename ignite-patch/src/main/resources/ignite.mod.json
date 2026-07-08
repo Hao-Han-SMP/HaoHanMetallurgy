@@ -1,0 +1,7 @@
+{
+  "id": "haohan-metallurgy-patch",
+  "version": "1.0-SNAPSHOT",
+  "mixins": [
+    "mixins.haohanmetallurgy.core.json"
+  ]
+}

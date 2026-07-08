@@ -26,6 +26,10 @@ public class ConfigManager {
     private int tempFallPerTick;
     private int tempMax;
     private String forgeTitle;
+    private boolean forgeCustomGuiEnabled;
+    private String forgeCustomGuiPrefix;
+    private String forgeCustomGuiGlyph;
+    private NamespacedKey forgeCustomGuiFont;
     private boolean failEnabled;
     private double failBaseChance;
 
@@ -69,6 +73,10 @@ public class ConfigManager {
     public int getTempFallPerTick()   { return tempFallPerTick; }
     public int getTempMax()           { return tempMax; }
     public String getForgeTitle()     { return forgeTitle; }
+    public boolean isForgeCustomGuiEnabled() { return forgeCustomGuiEnabled; }
+    public String getForgeCustomGuiPrefix()  { return forgeCustomGuiPrefix; }
+    public String getForgeCustomGuiGlyph()   { return forgeCustomGuiGlyph; }
+    public NamespacedKey getForgeCustomGuiFont() { return forgeCustomGuiFont; }
     public boolean isFailEnabled()    { return failEnabled; }
     public double getFailBaseChance() { return failBaseChance; }
 
@@ -116,6 +124,10 @@ public class ConfigManager {
         tempMax          = config.getInt("temperature.max", 2000);
         forgeTitle       = org.bukkit.ChatColor.translateAlternateColorCodes('&',
             config.getString("gui.forge-title", "&8⚒ &6Ancient Forge"));
+        forgeCustomGuiEnabled = config.getBoolean("gui.forge-custom.enabled", true);
+        forgeCustomGuiPrefix = config.getString("gui.forge-custom.prefix", "\uE100");
+        forgeCustomGuiGlyph = config.getString("gui.forge-custom.glyph", "\uE101");
+        forgeCustomGuiFont = parseNamespacedKey(config.getString("gui.forge-custom.font", "haohansmp:gui"));
         failEnabled      = config.getBoolean("fail.enabled", false);
         failBaseChance   = config.getDouble("fail.base-chance", 0.05);
 

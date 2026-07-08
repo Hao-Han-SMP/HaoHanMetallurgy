@@ -19,6 +19,11 @@ machines:
 gui:
   # Tên hiển thị của inventory GUI (hỗ trợ & color codes)
   forge-title: "&8⚒ &6Ancient Forge"
+  forge-custom:
+    enabled: true
+    prefix: "\uE100"
+    glyph: "\uE101"
+    font: "haohansmp:gui"
   # Slot layout: xem GuiManager để hiểu ý nghĩa từng slot
   fuel-slot: 3
   input-slot-1: 11
@@ -35,6 +40,7 @@ fuel-values:
   COAL_BLOCK: 7200
   BLAZE_ROD: 2400
   LAVA_BUCKET: 20000
+  DRIED_KELP_BLOCK: 4000
 
 temperature:
   # Nhiệt độ tăng bao nhiêu mỗi tick khi có fuel (8 = ~160°C/giây → đạt 800°C trong ~5 giây)
@@ -46,11 +52,12 @@ temperature:
 
   # Cấp độ giới hạn nhiệt độ tối đa theo loại nhiên liệu sử dụng
   fuel-limits:
+    "DRIED_KELP_BLOCK": 900
+    "CHARCOAL": 1050
     "COAL": 1200
-    "CHARCOAL": 1200
     "COAL_BLOCK": 1400
-    "BLAZE_ROD": 1600
-    "LAVA_BUCKET": 2000
+    "LAVA_BUCKET": 1600
+    "BLAZE_ROD": 1800
 
   # Các chất làm mát chủ động và nhiệt độ hạ đi tương ứng
   coolants:

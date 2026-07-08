@@ -24,12 +24,12 @@ import java.util.Set;
  *
  * <pre>
  *  [BG][BG][BG][FL][TP][BG][BG][BG][BG]   (0–8)
- *  [BG][BG][I1][I2][PR][BG][OT][BG][BG]   (9–17)
+ *  [BG][BG][I1][I2][PR][BG][OT][SL][BG]   (9–17)
  *  [BG][BG][BG][BG][BG][BG][BG][BG][BG]   (18–26)
  * </pre>
  *
  * FL=Fuel(3) TP=Temperature(4) I1=Input1(11) I2=Input2(12)
- * PR=Progress(13) OT=Output(15)
+ * PR=Progress(13) OT=Ingot output(15) SL=Slag output(16)
  *
  * Fixes:
  * - Real-time refresh mỗi 10 ticks (0.5s) qua startRefreshTask()
@@ -46,14 +46,15 @@ public class ForgeGui extends MetallurgyGui {
     public static final int SLOT_INPUT_1  = 11;
     public static final int SLOT_INPUT_2  = 12;
     public static final int SLOT_PROGRESS = 13;
-    public static final int SLOT_OUTPUT   = 15;
+    public static final int SLOT_SLAG     = 15;
+    public static final int SLOT_OUTPUT   = 16;
 
     /**
      * Slots player ĐƯỢC PHÉP đặt / lấy item.
      * Không đặt bất kỳ display item nào ở đây!
      */
     public static final Set<Integer> INTERACTIVE = Set.of(
-        SLOT_FUEL, SLOT_INPUT_1, SLOT_INPUT_2, SLOT_OUTPUT
+        SLOT_FUEL, SLOT_INPUT_1, SLOT_INPUT_2, SLOT_OUTPUT, SLOT_SLAG
     );
 
     /** Slots chỉ hiển thị — cancel mọi click. */
@@ -71,6 +72,17 @@ public class ForgeGui extends MetallurgyGui {
     @Override
     protected void buildLayout() {
         inventory = forge.getInventory();
+        if (plugin.getConfigManager().isForgeCustomGuiEnabled()) {
+            for (int i = 0; i < 27; i++) {
+                if (!INTERACTIVE.contains(i) && !DISPLAY_ONLY.contains(i)) {
+                    ItemStack current = inventory.getItem(i);
+                    if (current == null || current.getType() == Material.AIR || current.getType() == Material.GRAY_STAINED_GLASS_PANE) {
+                        inventory.setItem(i, null);
+                    }
+                }
+            }
+            return;
+        }
 
         // Background glass panes cho tất cả slots KHÔNG phải interactive
         ItemStack bg = makeDisplay(Material.GRAY_STAINED_GLASS_PANE, " ");
@@ -100,10 +112,14 @@ public class ForgeGui extends MetallurgyGui {
                          : temp < 1000 ? Material.YELLOW_STAINED_GLASS_PANE
                          :               Material.RED_STAINED_GLASS_PANE;
 
+        String tempStatus = temp < 400  ? "§bLạnh (Chưa sẵn sàng)"
+                          : temp < 1000 ? "§eẤm (Đang gia nhiệt)"
+                          :               "§cNóng Rực (Tối đa)";
+
         inventory.setItem(SLOT_TEMP, makeDisplay(tempMat,
-            "§c🌡 " + temp + "§7/§f" + maxTemp + "°C",
-            "§7Fuel còn: §f" + formatTicks(fuel),
-            "§8Đặt fuel vào ô §6[" + SLOT_FUEL + "]§8 (bên trái)."
+            "§c🌡 Nhiệt độ: " + tempStatus + " §7(" + temp + "§7/§f" + maxTemp + "°C)",
+            "§7Nhiên liệu còn: §f" + formatTicks(fuel),
+            "§8Đặt nhiên liệu vào ô phía trên để tăng nhiệt."
         ));
 
         // ── Progress ─────────────────────────────────────────
@@ -115,23 +131,23 @@ public class ForgeGui extends MetallurgyGui {
             case WORKING -> "§aĐANG CHẠY";
             case PAUSED  -> "§eTẠM DỪNG §7(nhiệt thấp)";
             case ERROR   -> "§cLỖI";
-            case IDLE    -> "§7Chờ...";
+            case IDLE    -> "§7Chờ nguyên liệu...";
         };
 
         List<String> lore = new ArrayList<>();
         lore.add("§7Trạng thái: " + stateTxt);
         if (recipe != null) {
-            lore.add("§7Recipe: §e" + recipe.getId());
+            lore.add("§7Công thức: §e" + recipe.getId());
             lore.add("§7" + buildBar(pct, 16) + " §f" + (int)(pct * 100) + "%");
             int remaining = (int)((1f - pct) * recipe.getTimeSeconds());
             lore.add("§7Còn lại: §f~" + remaining + "s");
         } else {
-            lore.add("§7Đặt nguyên liệu vào ô §a[11]§7 và §a[12].");
+            lore.add("§7Đặt nguyên liệu tương ứng vào các ô IN.");
         }
 
-        Material progMat = state == MachineState.WORKING ? Material.CLOCK : Material.COMPARATOR;
+        Material progMat = (state == MachineState.WORKING || state == MachineState.PAUSED) ? Material.CLOCK : Material.COMPARATOR;
         inventory.setItem(SLOT_PROGRESS, makeDisplayLore(progMat,
-            "§b⟶ §f" + (int)(pct * 100) + "%", lore));
+            "§b⟶ Tiến trình rèn: §f" + (int)(pct * 100) + "%", lore));
     }
 
     /**
@@ -149,6 +165,7 @@ public class ForgeGui extends MetallurgyGui {
     @Override
     public void onClose(InventoryCloseEvent event) {
         super.onClose(event); // hủy refreshTask
+        plugin.getMachineManager().saveAll();
     }
 
     /**
@@ -229,17 +246,6 @@ public class ForgeGui extends MetallurgyGui {
             }
             return;
         }
-
-        // 2. Xử lý nạp nhiên liệu
-        int ticks = plugin.getConfigManager().getFuelTicks(mat);
-        if (ticks <= 0) return; // Không phải fuel hợp lệ → để nguyên
-
-        forge.addFuel(ticks * fuelItem.getAmount(), mat);
-        inventory.setItem(SLOT_FUEL, null); // consume
-        plugin.getPluginLogger().debug(
-            "Fuel: " + mat + "×" + fuelItem.getAmount()
-            + " → +" + (ticks * fuelItem.getAmount()) + " ticks"
-        );
     }
 
     private void checkAndStartRecipe(Player player) {

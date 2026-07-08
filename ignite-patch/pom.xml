@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>dev.haohansmp</groupId>
+    <artifactId>HaoHanMetallurgy-IgnitePatch</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>HaoHan Metallurgy Ignite Patch</name>
+    <description>Optional Ignite/Mixin patch layer for HaoHan Metallurgy.</description>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>fabric</id>
+            <url>https://maven.fabricmc.net/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>space.vectrix.ignite</groupId>
+            <artifactId>ignite-api</artifactId>
+            <version>1.2.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.fabricmc</groupId>
+            <artifactId>sponge-mixin</artifactId>
+            <version>0.17.0+mixin.0.8.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.llamalad7</groupId>
+            <artifactId>mixinextras-common</artifactId>
+            <version>0.5.3</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

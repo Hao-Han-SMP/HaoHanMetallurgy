@@ -42,14 +42,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Xử lý tương tác của player với Ancient Forge:
- * <ul>
- *   <li>Right-click Blast Furnace → mở GUI (nếu đã active) hoặc validate + activate</li>
- *   <li>Shift + Right-click → xem thông tin cấu trúc</li>
- *   <li>Break controller/structural block → deactivate forge</li>
- * </ul>
- */
 public class ForgeListener implements Listener {
 
     private final HaoHanMetallurgy plugin;
@@ -69,23 +61,26 @@ public class ForgeListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteract(PlayerInteractEvent event) {
         // Chỉ xử lý right-click trực tiếp vào block, không fire double
-        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getHand() != EquipmentSlot.HAND) return;
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)
+            return;
+        if (event.getHand() != EquipmentSlot.HAND)
+            return;
 
         Block block = event.getClickedBlock();
-        if (block == null) return;
+        if (block == null)
+            return;
 
         Material blockType = block.getType();
 
         // ── Xử lý Bellows (Ống Thổi Khí) click ──────────────────
         if (blockType == Material.PISTON || blockType == Material.DISPENSER) {
             org.bukkit.block.BlockFace[] faces = {
-                org.bukkit.block.BlockFace.NORTH, 
-                org.bukkit.block.BlockFace.SOUTH, 
-                org.bukkit.block.BlockFace.EAST, 
-                org.bukkit.block.BlockFace.WEST,
-                org.bukkit.block.BlockFace.UP,
-                org.bukkit.block.BlockFace.DOWN
+                    org.bukkit.block.BlockFace.NORTH,
+                    org.bukkit.block.BlockFace.SOUTH,
+                    org.bukkit.block.BlockFace.EAST,
+                    org.bukkit.block.BlockFace.WEST,
+                    org.bukkit.block.BlockFace.UP,
+                    org.bukkit.block.BlockFace.DOWN
             };
             for (org.bukkit.block.BlockFace face : faces) {
                 Block adj = block.getRelative(face);
@@ -102,15 +97,16 @@ public class ForgeListener implements Listener {
             return;
         }
 
-        // ── Xử lý tương tác đa điểm (Click vào block bất kỳ thuộc cấu trúc lò đang hoạt động) ──
+        // ── Xử lý tương tác đa điểm (Click vào block bất kỳ thuộc cấu trúc lò đang
+        // hoạt động) ──
         AncientForge activeForge = getActiveForgeFromBlock(block);
         if (activeForge != null) {
             event.setCancelled(true);
             Player player = event.getPlayer();
             if (player.isSneaking()) {
                 player.sendMessage("§8[§6Forge§8] §7Trạng thái: §e" + activeForge.getState()
-                    + " §7| §cTemp: §f" + activeForge.getTemperature() + "°C"
-                    + " §7| §6Fuel: §f" + activeForge.getFuelTicksRemaining() + " ticks");
+                        + " §7| §cTemp: §f" + activeForge.getTemperature() + "°C"
+                        + " §7| §6Fuel: §f" + activeForge.getFuelTicksRemaining() + " ticks");
             } else {
                 plugin.getGuiManager().open(player, new ForgeGui(plugin, activeForge));
             }
@@ -121,7 +117,8 @@ public class ForgeListener implements Listener {
         if (ForgeStructure.isStructuralMaterial(blockType)) {
             Location coreLoc = findNearbyCoreCandidate(block);
             if (coreLoc != null) {
-                // Chỉ xử lý tương tác lò rèn khi Blast Furnace đã nằm trên đế phẳng 3x3 Mud Bricks
+                // Chỉ xử lý tương tác lò rèn khi Blast Furnace đã nằm trên đế phẳng 3x3 Mud
+                // Bricks
                 if (!hasMudBrickBase(coreLoc)) {
                     return;
                 }
@@ -137,14 +134,16 @@ public class ForgeListener implements Listener {
                 }
 
                 // Regular Right-click -> Kích hoạt lò rèn
-                // Nếu cấu trúc CHƯA đầy đủ, ta KHÔNG cancel event để người chơi vẫn đặt được block để hoàn thành!
+                // Nếu cấu trúc CHƯA đầy đủ, ta KHÔNG cancel event để người chơi vẫn đặt được
+                // block để hoàn thành!
                 if (!ForgeStructure.validate(coreLoc)) {
                     // Để tránh spam tin nhắn khi đang đặt khối xây dựng, ta chỉ gửi tin nhắn
                     // khi họ click bằng tay không hoặc click trực tiếp vào lò Blast Furnace
                     ItemStack itemInHand = player.getInventory().getItemInMainHand();
                     if (itemInHand.getType() == Material.AIR || block.getType() == ForgeStructure.CONTROLLER_MATERIAL) {
                         player.sendMessage("§8[§6Forge§8] §c⚠ Cấu trúc lò rèn chưa đầy đủ!");
-                        player.sendMessage("§8[§6Forge§8] §7Hãy §eShift+Right-click §7vào lò để xem các khối còn thiếu.");
+                        player.sendMessage(
+                                "§8[§6Forge§8] §7Hãy §eShift+Right-click §7vào lò để xem các khối còn thiếu.");
                     }
                     return;
                 }
@@ -161,9 +160,10 @@ public class ForgeListener implements Listener {
                 Block coreBlock = coreLoc.getBlock();
                 if (coreBlock.getState() instanceof org.bukkit.block.BlastFurnace bf) {
                     boolean hasItems = java.util.Arrays.stream(bf.getInventory().getContents())
-                        .anyMatch(item -> item != null && item.getType() != Material.AIR);
+                            .anyMatch(item -> item != null && item.getType() != Material.AIR);
                     if (hasItems) {
-                        player.sendMessage("§8[§6Forge§8] §c⚠ Vui lòng lấy hết vật phẩm trong lò Blast Furnace ra trước khi kích hoạt Lò Rèn Cổ Đại!");
+                        player.sendMessage(
+                                "§8[§6Forge§8] §c⚠ Vui lòng lấy hết vật phẩm trong lò Blast Furnace ra trước khi kích hoạt Lò Rèn Cổ Đại!");
                         player.playSound(coreLoc, Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
                         return;
                     }
@@ -180,10 +180,12 @@ public class ForgeListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockDamage(BlockDamageEvent event) {
         Block block = event.getBlock();
-        if (block.getType() != Material.BARRIER) return;
+        if (block.getType() != Material.BARRIER)
+            return;
 
         AncientForge activeForge = getActiveForgeFromBlock(block);
-        if (activeForge == null) return;
+        if (activeForge == null)
+            return;
 
         event.setInstaBreak(false);
         beginForgeMining(activeForge, block, event.getPlayer());
@@ -199,15 +201,16 @@ public class ForgeListener implements Listener {
         Block block = event.getBlock();
         Location loc = block.getLocation();
 
-        // Kiểm tra xem block bị phá hủy có thuộc cấu trúc của lò rèn nào đang chạy không
+        // Kiểm tra xem block bị phá hủy có thuộc cấu trúc của lò rèn nào đang chạy
+        // không
         AncientForge activeForge = getActiveForgeFromBlock(block);
         if (activeForge != null) {
             // Hủy sự kiện phá block mặc định của Minecraft để tự xử lý
             event.setCancelled(true);
-            
+
             Location coreLoc = activeForge.getLocation();
             plugin.getMachineManager().unregister(coreLoc);
-            
+
             // Hoàn trả lại các block cũ của lò rèn về trạng thái ban đầu
             restoreOriginalBlocks(activeForge, block);
             plugin.getMachineManager().saveAll();
@@ -215,8 +218,8 @@ public class ForgeListener implements Listener {
             // Gửi tin nhắn
             event.getPlayer().sendMessage("§8[§6Forge§8] §eLò Rèn Cổ Đại đã bị hủy kích hoạt. Các vật phẩm đã rơi ra.");
             plugin.getPluginLogger().info(
-                "AncientForge deactivated due to block break at " + formatLoc(coreLoc) + " by " + event.getPlayer().getName()
-            );
+                    "AncientForge deactivated due to block break at " + formatLoc(coreLoc) + " by "
+                            + event.getPlayer().getName());
             return;
         }
 
@@ -255,7 +258,8 @@ public class ForgeListener implements Listener {
             return;
         }
 
-        // Lấy hướng xoay của Blast Furnace để áp dụng làm hướng mặt chính của mô hình 3D
+        // Lấy hướng xoay của Blast Furnace để áp dụng làm hướng mặt chính của mô hình
+        // 3D
         if (controllerBlock.getBlockData() instanceof org.bukkit.block.data.Directional directional) {
             org.bukkit.block.BlockFace facing = directional.getFacing();
             if (facing == org.bukkit.block.BlockFace.WEST) {
@@ -271,13 +275,21 @@ public class ForgeListener implements Listener {
 
         // 1. Chụp lại toàn bộ các khối cấu trúc thật để phục hồi sau này
         java.util.Map<ForgeStructure.BlockOffset, Material> originalBlocks = new java.util.HashMap<>();
-        originalBlocks.put(new ForgeStructure.BlockOffset(0, 0, 0, ForgeStructure.CONTROLLER_MATERIAL), ForgeStructure.CONTROLLER_MATERIAL);
+        originalBlocks.put(new ForgeStructure.BlockOffset(0, 0, 0, ForgeStructure.CONTROLLER_MATERIAL),
+                ForgeStructure.CONTROLLER_MATERIAL);
         for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
             int rx = offset.dx();
             int rz = offset.dz();
-            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
-            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+            if (rotation == 90) {
+                rx = -offset.dz();
+                rz = offset.dx();
+            } else if (rotation == 180) {
+                rx = -offset.dx();
+                rz = -offset.dz();
+            } else if (rotation == 270) {
+                rx = offset.dz();
+                rz = -offset.dx();
+            }
 
             Material mat = loc.clone().add(rx, offset.dy(), rz).getBlock().getType();
             originalBlocks.put(offset, mat);
@@ -296,9 +308,16 @@ public class ForgeListener implements Listener {
         for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
             int rx = offset.dx();
             int rz = offset.dz();
-            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
-            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+            if (rotation == 90) {
+                rx = -offset.dz();
+                rz = offset.dx();
+            } else if (rotation == 180) {
+                rx = -offset.dx();
+                rz = -offset.dz();
+            } else if (rotation == 270) {
+                rx = offset.dz();
+                rz = -offset.dx();
+            }
 
             loc.clone().add(rx, offset.dy(), rz).getBlock().setType(Material.BARRIER, false);
         }
@@ -307,8 +326,7 @@ public class ForgeListener implements Listener {
         forge.playActivationEffects();
         plugin.getMachineManager().saveAll();
         plugin.getPluginLogger().info(
-            "AncientForge activated at " + formatLoc(loc) + " by " + player.getName()
-        );
+                "AncientForge activated at " + formatLoc(loc) + " by " + player.getName());
 
         // Mở GUI ngay lập tức
         plugin.getGuiManager().open(player, new ForgeGui(plugin, forge));
@@ -327,9 +345,9 @@ public class ForgeListener implements Listener {
             @Override
             public void run() {
                 if (!player.isOnline()
-                    || !plugin.getMachineManager().exists(coreLoc)
-                    || !block.getWorld().equals(player.getWorld())
-                    || player.getLocation().distanceSquared(blockLoc.clone().add(0.5, 0.5, 0.5)) > 36) {
+                        || !plugin.getMachineManager().exists(coreLoc)
+                        || !block.getWorld().equals(player.getWorld())
+                        || player.getLocation().distanceSquared(blockLoc.clone().add(0.5, 0.5, 0.5)) > 36) {
                     forgeMiningTasks.remove(playerId);
                     player.sendActionBar("");
                     cancel();
@@ -373,8 +391,7 @@ public class ForgeListener implements Listener {
 
         player.sendMessage("§8[§6Forge§8] §eLò Rèn Cổ Đại đã bị hủy kích hoạt. Các vật phẩm đã rơi ra.");
         plugin.getPluginLogger().info(
-            "AncientForge deactivated due to player break at " + formatLoc(coreLoc) + " by " + player.getName()
-        );
+                "AncientForge deactivated due to player break at " + formatLoc(coreLoc) + " by " + player.getName());
     }
 
     private void deactivateForge(Location loc, Block block, Player player) {
@@ -389,14 +406,14 @@ public class ForgeListener implements Listener {
 
         player.sendMessage("§8[§6Forge§8] §eAncient Forge đã bị phá hủy. Các vật phẩm trong lò đã rơi ra.");
         plugin.getPluginLogger().info(
-            "AncientForge destroyed at " + formatLoc(loc) + " by " + player.getName()
-        );
+                "AncientForge destroyed at " + formatLoc(loc) + " by " + player.getName());
     }
 
     private void dropMachineContents(Machine machine) {
         Location dropLoc = getForgeMouthLocation(machine);
         World world = dropLoc.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
         Vector burstVelocity = getForgeMouthDirection(machine).multiply(0.38).setY(0.22);
         org.bukkit.inventory.Inventory inv = machine.getInventory();
         for (int slot : ForgeGui.INTERACTIVE) {
@@ -404,10 +421,9 @@ public class ForgeListener implements Listener {
             if (item != null && item.getType() != Material.AIR) {
                 Item dropped = world.dropItem(dropLoc, item.clone());
                 dropped.setVelocity(burstVelocity.clone().add(new Vector(
-                    (EXPLOSION_RANDOM.nextDouble() - 0.5) * 0.12,
-                    EXPLOSION_RANDOM.nextDouble() * 0.08,
-                    (EXPLOSION_RANDOM.nextDouble() - 0.5) * 0.12
-                )));
+                        (EXPLOSION_RANDOM.nextDouble() - 0.5) * 0.12,
+                        EXPLOSION_RANDOM.nextDouble() * 0.08,
+                        (EXPLOSION_RANDOM.nextDouble() - 0.5) * 0.12)));
                 inv.setItem(slot, null);
             }
         }
@@ -474,8 +490,8 @@ public class ForgeListener implements Listener {
                 }
                 if (isVolatileForge(nearby)
                         && sameWorld(currentLoc, nearby.getLocation())
-                        && currentLoc.distanceSquared(nearby.getLocation())
-                            <= FORGE_EXPLOSION_SPREAD_RADIUS * FORGE_EXPLOSION_SPREAD_RADIUS) {
+                        && currentLoc.distanceSquared(nearby.getLocation()) <= FORGE_EXPLOSION_SPREAD_RADIUS
+                                * FORGE_EXPLOSION_SPREAD_RADIUS) {
                     queue.addLast(nearby);
                 }
             }
@@ -505,8 +521,7 @@ public class ForgeListener implements Listener {
         plugin.getMachineManager().saveAll();
 
         plugin.getPluginLogger().info(
-            "AncientForge exploded at " + formatLoc(coreLoc) + " after blast impact."
-        );
+                "AncientForge exploded at " + formatLoc(coreLoc) + " after blast impact.");
     }
 
     private void damageInactiveForges(Set<AncientForge> forges) {
@@ -521,8 +536,7 @@ public class ForgeListener implements Listener {
             scorchForgeArea(forge, false);
             playForgeDamageEffects(forge);
             plugin.getPluginLogger().info(
-                "AncientForge damaged at " + formatLoc(coreLoc) + " by nearby blast."
-            );
+                    "AncientForge damaged at " + formatLoc(coreLoc) + " by nearby blast.");
         }
         if (!forges.isEmpty()) {
             plugin.getMachineManager().saveAll();
@@ -571,8 +585,8 @@ public class ForgeListener implements Listener {
                     continue;
                 }
                 Material rubble = dy <= 0 || EXPLOSION_RANDOM.nextDouble() < 0.72
-                    ? randomStoneRubbleMaterial()
-                    : randomScorchedMaterial(0.85);
+                        ? randomStoneRubbleMaterial()
+                        : randomScorchedMaterial(0.85);
                 if (canReplaceForgeShell(forgeBlock.getBlock())) {
                     forgeBlock.getBlock().setType(rubble, false);
                 }
@@ -664,21 +678,21 @@ public class ForgeListener implements Listener {
     private boolean canScorch(Block block) {
         Material type = block.getType();
         return type != Material.AIR
-            && type != Material.BEDROCK
-            && type != Material.END_PORTAL_FRAME
-            && type != Material.END_PORTAL
-            && type != Material.NETHER_PORTAL
-            && type != Material.BARRIER
-            && !type.name().contains("COMMAND_BLOCK");
+                && type != Material.BEDROCK
+                && type != Material.END_PORTAL_FRAME
+                && type != Material.END_PORTAL
+                && type != Material.NETHER_PORTAL
+                && type != Material.BARRIER
+                && !type.name().contains("COMMAND_BLOCK");
     }
 
     private boolean canReplaceForgeShell(Block block) {
         Material type = block.getType();
         return type != Material.BEDROCK
-            && type != Material.END_PORTAL_FRAME
-            && type != Material.END_PORTAL
-            && type != Material.NETHER_PORTAL
-            && !type.name().contains("COMMAND_BLOCK");
+                && type != Material.END_PORTAL_FRAME
+                && type != Material.END_PORTAL
+                && type != Material.NETHER_PORTAL
+                && !type.name().contains("COMMAND_BLOCK");
     }
 
     private void playForgeDamageEffects(AncientForge forge) {
@@ -712,7 +726,8 @@ public class ForgeListener implements Listener {
         world.spawnParticle(org.bukkit.Particle.LAVA, mouth, 24, 0.35, 0.35, 0.35, 0.08);
         world.spawnParticle(org.bukkit.Particle.SMOKE, mouth, 35, 0.45, 0.35, 0.45, 0.08);
         world.spawnParticle(org.bukkit.Particle.LARGE_SMOKE, chimney, 34, 0.45, 0.75, 0.45, 0.05);
-        world.spawnParticle(org.bukkit.Particle.CAMPFIRE_SIGNAL_SMOKE, chimney.clone().add(0, 0.5, 0), 12, 0.5, 0.5, 0.5, 0.04);
+        world.spawnParticle(org.bukkit.Particle.CAMPFIRE_SIGNAL_SMOKE, chimney.clone().add(0, 0.5, 0), 12, 0.5, 0.5,
+                0.5, 0.04);
         world.spawnParticle(org.bukkit.Particle.ASH, center, 45, 1.25, 0.65, 1.25, 0.05);
 
         world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1.4f, 0.72f);
@@ -721,7 +736,8 @@ public class ForgeListener implements Listener {
 
         if (source != null && sameWorld(source, loc)) {
             Vector shove = loc.toVector().subtract(source.toVector()).normalize().multiply(0.2);
-            world.getNearbyEntities(center, 4.0, 3.0, 4.0).forEach(entity -> entity.setVelocity(entity.getVelocity().add(shove)));
+            world.getNearbyEntities(center, 4.0, 3.0, 4.0)
+                    .forEach(entity -> entity.setVelocity(entity.getVelocity().add(shove)));
         }
     }
 
@@ -734,9 +750,16 @@ public class ForgeListener implements Listener {
         for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
             int rx = offset.dx();
             int rz = offset.dz();
-            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
-            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+            if (rotation == 90) {
+                rx = -offset.dz();
+                rz = offset.dx();
+            } else if (rotation == 180) {
+                rx = -offset.dx();
+                rz = -offset.dz();
+            } else if (rotation == 270) {
+                rx = offset.dz();
+                rz = -offset.dx();
+            }
 
             locations.add(loc.clone().add(rx, offset.dy(), rz));
         }
@@ -779,9 +802,16 @@ public class ForgeListener implements Listener {
 
             int rx = offset.dx();
             int rz = offset.dz();
-            if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
-            else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-            else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+            if (rotation == 90) {
+                rx = -offset.dz();
+                rz = offset.dx();
+            } else if (rotation == 180) {
+                rx = -offset.dx();
+                rz = -offset.dz();
+            } else if (rotation == 270) {
+                rx = offset.dz();
+                rz = -offset.dx();
+            }
 
             Block block = loc.clone().add(rx, offset.dy(), rz).getBlock();
             if (block.equals(brokenBlock)) {
@@ -807,7 +837,8 @@ public class ForgeListener implements Listener {
 
     private void invalidateNearbyForges(Block brokenBlock) {
         AncientForge forge = getActiveForgeFromBlock(brokenBlock);
-        if (forge == null) return;
+        if (forge == null)
+            return;
 
         Location coreLoc = forge.getLocation();
         plugin.getMachineManager().unregister(coreLoc);
@@ -816,14 +847,12 @@ public class ForgeListener implements Listener {
         plugin.getMachineManager().saveAll();
 
         coreLoc.getWorld().getPlayers().stream()
-            .filter(p -> p.getLocation().distanceSquared(coreLoc) < 50 * 50)
-            .forEach(p -> p.sendMessage(
-                "§8[§6Forge§8] §c⚠ Lò Rèn Cổ Đại đã bị phá vỡ cấu trúc!"
-            ));
+                .filter(p -> p.getLocation().distanceSquared(coreLoc) < 50 * 50)
+                .forEach(p -> p.sendMessage(
+                        "§8[§6Forge§8] §c⚠ Lò Rèn Cổ Đại đã bị phá vỡ cấu trúc!"));
 
         plugin.getPluginLogger().info(
-            "AncientForge invalidated (structural break) at " + formatLoc(coreLoc)
-        );
+                "AncientForge invalidated (structural break) at " + formatLoc(coreLoc));
     }
 
     private AncientForge getActiveForgeFromBlock(Block clickedBlock) {
@@ -843,9 +872,16 @@ public class ForgeListener implements Listener {
                 for (ForgeStructure.BlockOffset offset : ForgeStructure.REQUIRED_BLOCKS) {
                     int rx = offset.dx();
                     int rz = offset.dz();
-                    if (rotation == 90) { rx = -offset.dz(); rz = offset.dx(); }
-                    else if (rotation == 180) { rx = -offset.dx(); rz = -offset.dz(); }
-                    else if (rotation == 270) { rx = offset.dz(); rz = -offset.dx(); }
+                    if (rotation == 90) {
+                        rx = -offset.dz();
+                        rz = offset.dx();
+                    } else if (rotation == 180) {
+                        rx = -offset.dx();
+                        rz = -offset.dz();
+                    } else if (rotation == 270) {
+                        rx = offset.dz();
+                        rz = -offset.dx();
+                    }
 
                     int bx = coreLoc.getBlockX() + rx;
                     int by = coreLoc.getBlockY() + offset.dy();
@@ -865,7 +901,8 @@ public class ForgeListener implements Listener {
     }
 
     private Location findNearbyCoreCandidate(Block clickedBlock) {
-        // Quét bán kính nhỏ dy từ -2 đến 1, dx/dz từ -1 đến 1 để tìm Blast Furnace core chưa kích hoạt
+        // Quét bán kính nhỏ dy từ -2 đến 1, dx/dz từ -1 đến 1 để tìm Blast Furnace core
+        // chưa kích hoạt
         for (int dy = -2; dy <= 1; dy++) {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dz = -1; dz <= 1; dz++) {
@@ -884,7 +921,8 @@ public class ForgeListener implements Listener {
 
     private boolean hasMudBrickBase(Location coreLoc) {
         org.bukkit.World world = coreLoc.getWorld();
-        if (world == null) return false;
+        if (world == null)
+            return false;
         int cy = coreLoc.getBlockY() - 1;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
@@ -914,7 +952,8 @@ public class ForgeListener implements Listener {
             }
         }
 
-        if (forge == null) return;
+        if (forge == null)
+            return;
 
         // Piston thổi khí tự động (Blast Bellows)
         if (forge.getState() == MachineState.WORKING) {
@@ -925,7 +964,8 @@ public class ForgeListener implements Listener {
             Location loc = forge.getLocation();
             if (loc.getWorld() != null) {
                 loc.getWorld().playSound(loc, Sound.ENTITY_WIND_CHARGE_WIND_BURST, 0.5f, 1.2f);
-                loc.getWorld().spawnParticle(org.bukkit.Particle.CLOUD, loc.clone().add(0.5, 1.2, 0.5), 6, 0.1, 0.1, 0.1, 0.02);
+                loc.getWorld().spawnParticle(org.bukkit.Particle.CLOUD, loc.clone().add(0.5, 1.2, 0.5), 6, 0.1, 0.1,
+                        0.1, 0.02);
             }
         }
     }

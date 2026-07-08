@@ -79,9 +79,11 @@ public class VanillaToolListener implements Listener {
     }
 
     private ItemStack formatPickaxe(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return item;
+        if (item == null || item.getType() == Material.AIR)
+            return item;
         ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
+        if (meta == null)
+            return item;
 
         // Kiểm tra xem đã định dạng chưa
         if (meta.getPersistentDataContainer().has(formatKey, PersistentDataType.BOOLEAN)) {
@@ -95,11 +97,12 @@ public class VanillaToolListener implements Listener {
 
         meta.setDisplayName(name);
 
-        // Giữ lại mô tả cũ hoặc thông tin enchantments của vật phẩm, chỉ chèn thông tin Tier của chúng ta
+        // Giữ lại mô tả cũ hoặc thông tin enchantments của vật phẩm, chỉ chèn thông tin
+        // Tier của chúng ta
         List<String> newLore = new ArrayList<>();
         newLore.add(tierLore);
         newLore.add("§7Vật phẩm game gốc đã được thiết lập thông số.");
-        
+
         List<String> existingLore = meta.getLore();
         if (existingLore != null) {
             for (String line : existingLore) {
@@ -117,12 +120,18 @@ public class VanillaToolListener implements Listener {
     }
 
     private int getPickaxeTier(Material type) {
-        if (type == Material.NETHERITE_PICKAXE) return 9;
-        if (type == Material.DIAMOND_PICKAXE) return 7;
-        if (type == Material.IRON_PICKAXE) return 6;
-        if (type == Material.GOLDEN_PICKAXE) return 2;
-        if (type == Material.STONE_PICKAXE) return 2;
-        if (type == Material.WOODEN_PICKAXE) return 1;
+        if (type == Material.NETHERITE_PICKAXE)
+            return 9;
+        if (type == Material.DIAMOND_PICKAXE)
+            return 7;
+        if (type == Material.IRON_PICKAXE)
+            return 6;
+        if (type == Material.GOLDEN_PICKAXE)
+            return 2;
+        if (type == Material.STONE_PICKAXE)
+            return 2;
+        if (type == Material.WOODEN_PICKAXE)
+            return 1;
         return 0;
     }
 

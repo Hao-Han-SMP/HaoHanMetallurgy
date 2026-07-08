@@ -2,7 +2,6 @@ package dev.haohansmp.metallurgy.listener;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
 import dev.haohansmp.metallurgy.item.CustomItem;
-import dev.haohansmp.metallurgy.machine.forge.ForgeStructure;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,9 +16,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Xử lý các quy tắc thăng tiến (Progression) và giới hạn công cụ đào quặng (Tool Restrictions).
- */
 public class ProgressionListener implements Listener {
 
     private final HaoHanMetallurgy plugin;
@@ -57,7 +53,8 @@ public class ProgressionListener implements Listener {
             }
         }
 
-        if (oreKey == null) return; // Không phải quặng giới hạn
+        if (oreKey == null)
+            return; // Không phải quặng giới hạn
 
         // Lấy cấp bậc yêu cầu từ cấu hình
         Map<String, Integer> reqs = plugin.getConfigManager().getMiningRequirements();
@@ -78,7 +75,8 @@ public class ProgressionListener implements Listener {
             // Gửi cảnh báo dưới dạng Action Bar
             String toolNeeded = getToolTierName(reqTier);
             player.sendActionBar("§c⚠ Yêu cầu cúp: " + toolNeeded + " §cđể khai thác quặng này!");
-            player.sendMessage("§8[§6Metallurgy§8] §cCông cụ của bạn quá yếu! Cần ít nhất §e" + toolNeeded + " §ctrở lên để thu thập quặng này.");
+            player.sendMessage("§8[§6Metallurgy§8] §cCông cụ của bạn quá yếu! Cần ít nhất §e" + toolNeeded
+                    + " §ctrở lên để thu thập quặng này.");
             return;
         }
 
@@ -111,22 +109,34 @@ public class ProgressionListener implements Listener {
         Optional<CustomItem> customOpt = plugin.getItemManager().getCustomItem(tool);
         if (customOpt.isPresent()) {
             CustomItem ci = customOpt.get();
-            if (ci == CustomItem.MITHRIL_PICKAXE) return 8;
-            if (ci == CustomItem.IRON_SLAG_PICKAXE) return 5;
-            if (ci == CustomItem.COPPER_PICKAXE) return 4;
-            if (ci == CustomItem.COPPER_SLAG_PICKAXE) return 3;
-            if (ci == CustomItem.SOULSTEEL_PICKAXE) return 8;
-            if (ci == CustomItem.EMBERSTEEL_PICKAXE) return 4;
+            if (ci == CustomItem.MITHRIL_PICKAXE)
+                return 8;
+            if (ci == CustomItem.IRON_SLAG_PICKAXE)
+                return 5;
+            if (ci == CustomItem.COPPER_PICKAXE)
+                return 4;
+            if (ci == CustomItem.COPPER_SLAG_PICKAXE)
+                return 3;
+            if (ci == CustomItem.SOULSTEEL_PICKAXE)
+                return 8;
+            if (ci == CustomItem.EMBERSTEEL_PICKAXE)
+                return 4;
         }
 
         // Kiểm tra Vanilla Pickaxes
         Material type = tool.getType();
-        if (type == Material.NETHERITE_PICKAXE) return 9;
-        if (type == Material.DIAMOND_PICKAXE) return 7;
-        if (type == Material.IRON_PICKAXE) return 6;
-        if (type == Material.GOLDEN_PICKAXE) return 2;
-        if (type == Material.STONE_PICKAXE) return 2;
-        if (type == Material.WOODEN_PICKAXE) return 1;
+        if (type == Material.NETHERITE_PICKAXE)
+            return 9;
+        if (type == Material.DIAMOND_PICKAXE)
+            return 7;
+        if (type == Material.IRON_PICKAXE)
+            return 6;
+        if (type == Material.GOLDEN_PICKAXE)
+            return 2;
+        if (type == Material.STONE_PICKAXE)
+            return 2;
+        if (type == Material.WOODEN_PICKAXE)
+            return 1;
 
         return 0; // Bất kỳ công cụ nào khác hoặc tay không
     }
@@ -154,10 +164,12 @@ public class ProgressionListener implements Listener {
      */
     private int getDropAmount(Player player) {
         ItemStack tool = player.getInventory().getItemInMainHand();
-        if (tool == null || tool.getType() == Material.AIR) return 1;
+        if (tool == null || tool.getType() == Material.AIR)
+            return 1;
 
         int fortuneLevel = tool.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.FORTUNE);
-        if (fortuneLevel <= 0) return 1;
+        if (fortuneLevel <= 0)
+            return 1;
 
         // Công thức Fortune cơ bản của Minecraft: tăng lượng rơi trung bình
         double rand = Math.random();
@@ -167,13 +179,18 @@ public class ProgressionListener implements Listener {
         if (fortuneLevel == 1) {
             return rand < 0.33 ? 2 : 1;
         } else if (fortuneLevel == 2) {
-            if (rand < 0.25) return 3;
-            if (rand < 0.50) return 2;
+            if (rand < 0.25)
+                return 3;
+            if (rand < 0.50)
+                return 2;
             return 1;
         } else {
-            if (rand < 0.20) return 4;
-            if (rand < 0.40) return 3;
-            if (rand < 0.60) return 2;
+            if (rand < 0.20)
+                return 4;
+            if (rand < 0.40)
+                return 3;
+            if (rand < 0.60)
+                return 2;
             return 1;
         }
     }

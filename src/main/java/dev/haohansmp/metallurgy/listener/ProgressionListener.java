@@ -105,40 +105,15 @@ public class ProgressionListener implements Listener {
             return 0;
         }
 
-        // Kiểm tra Custom Pickaxes trước
         Optional<CustomItem> customOpt = plugin.getItemManager().getCustomItem(tool);
         if (customOpt.isPresent()) {
-            CustomItem ci = customOpt.get();
-            if (ci == CustomItem.MITHRIL_PICKAXE)
-                return 8;
-            if (ci == CustomItem.IRON_SLAG_PICKAXE)
-                return 5;
-            if (ci == CustomItem.COPPER_PICKAXE)
-                return 4;
-            if (ci == CustomItem.COPPER_SLAG_PICKAXE)
-                return 3;
-            if (ci == CustomItem.SOULSTEEL_PICKAXE)
-                return 8;
-            if (ci == CustomItem.EMBERSTEEL_PICKAXE)
-                return 4;
+            int configuredTier = plugin.getConfigManager().getCustomItemStats(customOpt.get()).tier();
+            if (configuredTier > 0) {
+                return configuredTier;
+            }
         }
 
-        // Kiểm tra Vanilla Pickaxes
-        Material type = tool.getType();
-        if (type == Material.NETHERITE_PICKAXE)
-            return 9;
-        if (type == Material.DIAMOND_PICKAXE)
-            return 7;
-        if (type == Material.IRON_PICKAXE)
-            return 6;
-        if (type == Material.GOLDEN_PICKAXE)
-            return 2;
-        if (type == Material.STONE_PICKAXE)
-            return 2;
-        if (type == Material.WOODEN_PICKAXE)
-            return 1;
-
-        return 0; // Bất kỳ công cụ nào khác hoặc tay không
+        return plugin.getConfigManager().getVanillaToolTier(tool.getType());
     }
 
     /**
@@ -152,7 +127,7 @@ public class ProgressionListener implements Listener {
             case 4 -> "§6Copper Pickaxe";
             case 5 -> "§8Iron Slag Pickaxe";
             case 6 -> "§fIron Pickaxe";
-            case 7 -> "§bDiamond Pickaxe";
+            case 7 -> "§3Mithril Slag Pickaxe / §bDiamond Pickaxe";
             case 8 -> "§bMithril Pickaxe";
             case 9 -> "§5Netherite Pickaxe";
             default -> "§7Any Pickaxe";
@@ -195,3 +170,4 @@ public class ProgressionListener implements Listener {
         }
     }
 }
+

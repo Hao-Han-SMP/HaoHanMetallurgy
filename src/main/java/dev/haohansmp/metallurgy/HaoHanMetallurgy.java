@@ -11,6 +11,7 @@ import dev.haohansmp.metallurgy.listener.ProgressionListener;
 import dev.haohansmp.metallurgy.listener.VanillaFurnaceListener;
 import dev.haohansmp.metallurgy.listener.VanillaToolListener;
 import dev.haohansmp.metallurgy.machine.MachineManager;
+import dev.haohansmp.metallurgy.recipe.CraftingRecipeManager;
 import dev.haohansmp.metallurgy.recipe.RecipeLoader;
 import dev.haohansmp.metallurgy.util.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,6 +41,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     private PluginLogger pluginLogger;
     private ConfigManager configManager;
     private ItemManager itemManager;
+    private CraftingRecipeManager craftingRecipeManager;
     private RecipeLoader recipeLoader;
     private MachineManager machineManager;
     private GuiManager guiManager;
@@ -64,6 +66,8 @@ public final class HaoHanMetallurgy extends JavaPlugin {
 
         // 2.5 Item Manager
         itemManager = new ItemManager(this);
+        craftingRecipeManager = new CraftingRecipeManager(this);
+        craftingRecipeManager.registerAll();
 
         // 3. Recipe Loader
         recipeLoader = new RecipeLoader(this);
@@ -125,6 +129,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     public PluginLogger getPluginLogger()   { return pluginLogger; }
     public ConfigManager getConfigManager() { return configManager; }
     public ItemManager getItemManager()     { return itemManager; }
+    public CraftingRecipeManager getCraftingRecipeManager() { return craftingRecipeManager; }
     public RecipeLoader getRecipeLoader()   { return recipeLoader; }
     public MachineManager getMachineManager() { return machineManager; }
     public GuiManager getGuiManager()       { return guiManager; }

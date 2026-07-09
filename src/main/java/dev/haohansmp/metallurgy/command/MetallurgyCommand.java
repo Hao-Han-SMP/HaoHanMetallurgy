@@ -89,6 +89,7 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
     private void handleReload(CommandSender sender) {
         try {
             plugin.getConfigManager().reload();
+            plugin.getCraftingRecipeManager().registerAll();
             plugin.getRecipeLoader().loadAll();
             plugin.getTickEngine().restart();
             int refreshed = plugin.getMachineManager().refreshForgeDisplays();

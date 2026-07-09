@@ -1,8 +1,13 @@
 package dev.haohansmp.metallurgy.item;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
+import dev.haohansmp.metallurgy.config.CustomItemStats;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -33,7 +38,7 @@ public class ItemManager {
             if (customItem.getCustomModelData() > 0) {
                 meta.setCustomModelData(customItem.getCustomModelData());
             }
-            // Ghi ID vào PersistentDataContainer để nhận dạng chính xác
+            applyConfiguredStats(customItem, meta);
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, customItem.getId());
             itemStack.setItemMeta(meta);
         }
@@ -66,4 +71,32 @@ public class ItemManager {
             .map(item -> item == target)
             .orElse(false);
     }
+
+    private void applyConfiguredStats(CustomItem customItem, ItemMeta meta) {
+        CustomItemStats stats = plugin.getConfigManager().getCustomItemStats(customItem);
+
+        if (stats.maxDamage() > 0 && meta instanceof Damageable damageable) {
+            damageable.setMaxDamage(stats.maxDamage());
+        }
+
+        applyAttribute(meta, Attribute.ATTACK_DAMAGE, customItem, "attack_damage", stats.attackDamage());
+        applyAttribute(meta, Attribute.ATTACK_SPEED, customItem, "attack_speed", stats.attackSpeed());
+        applyAttribute(meta, Attribute.MINING_EFFICIENCY, customItem, "mining_efficiency", stats.miningEfficiency());
+        applyAttribute(meta, Attribute.BLOCK_BREAK_SPEED, customItem, "block_break_speed", stats.blockBreakSpeed());
+    }
+
+    private void applyAttribute(ItemMeta meta, Attribute attribute, CustomItem customItem, String suffix, double amount) {
+        if (amount == 0.0) {
+            return;
+        }
+
+        NamespacedKey key = new NamespacedKey(plugin, customItem.getId() + "_" + suffix);
+        AttributeModifier modifier = new AttributeModifier(
+                key,
+                amount,
+                AttributeModifier.Operation.ADD_NUMBER,
+                EquipmentSlotGroup.MAINHAND);
+        meta.addAttributeModifier(attribute, modifier);
+    }
 }
+

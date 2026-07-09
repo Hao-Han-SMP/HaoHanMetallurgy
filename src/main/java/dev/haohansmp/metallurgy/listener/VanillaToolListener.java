@@ -73,6 +73,7 @@ public class VanillaToolListener implements Listener {
         return mat == Material.WOODEN_PICKAXE
                 || mat == Material.STONE_PICKAXE
                 || mat == Material.GOLDEN_PICKAXE
+                || mat == Material.COPPER_PICKAXE
                 || mat == Material.IRON_PICKAXE
                 || mat == Material.DIAMOND_PICKAXE
                 || mat == Material.NETHERITE_PICKAXE;
@@ -84,6 +85,9 @@ public class VanillaToolListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta == null)
             return item;
+        if (plugin.getItemManager().getCustomItem(item).isPresent()) {
+            return item;
+        }
 
         // Kiểm tra xem đã định dạng chưa
         if (meta.getPersistentDataContainer().has(formatKey, PersistentDataType.BOOLEAN)) {
@@ -130,6 +134,8 @@ public class VanillaToolListener implements Listener {
             return 2;
         if (type == Material.STONE_PICKAXE)
             return 2;
+        if (type == Material.COPPER_PICKAXE)
+            return 4;
         if (type == Material.WOODEN_PICKAXE)
             return 1;
         return 0;
@@ -140,6 +146,7 @@ public class VanillaToolListener implements Listener {
             case WOODEN_PICKAXE -> "§fWooden Pickaxe";
             case STONE_PICKAXE -> "§7Stone Pickaxe";
             case GOLDEN_PICKAXE -> "§eGolden Pickaxe";
+            case COPPER_PICKAXE -> "§6Copper Pickaxe";
             case IRON_PICKAXE -> "§fIron Pickaxe";
             case DIAMOND_PICKAXE -> "§bDiamond Pickaxe";
             case NETHERITE_PICKAXE -> "§5Netherite Pickaxe";
@@ -151,6 +158,7 @@ public class VanillaToolListener implements Listener {
         return switch (tier) {
             case 1 -> "§8Tier: §c1 (Wooden)";
             case 2 -> "§8Tier: §c2 (Stone/Gold)";
+            case 4 -> "§8Tier: §c4 (Copper)";
             case 6 -> "§8Tier: §c6 (Iron)";
             case 7 -> "§8Tier: §c7 (Diamond)";
             case 9 -> "§8Tier: §c9 (Netherite)";

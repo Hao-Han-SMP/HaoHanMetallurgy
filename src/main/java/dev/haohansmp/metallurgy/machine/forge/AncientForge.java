@@ -1,6 +1,7 @@
 package dev.haohansmp.metallurgy.machine.forge;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
+import dev.haohansmp.metallurgy.item.CustomItem;
 import dev.haohansmp.metallurgy.machine.Machine;
 import dev.haohansmp.metallurgy.machine.MachineState;
 import dev.haohansmp.metallurgy.machine.MachineType;
@@ -256,6 +257,11 @@ public class AncientForge extends Machine {
     }
 
     private ItemStack buildMetalSlag(MetallurgyRecipe recipe) {
+        java.util.Optional<CustomItem> slagType = getSlagForRecipe(recipe);
+        if (slagType.isPresent()) {
+            return plugin.getItemManager().createItem(slagType.get(), 1);
+        }
+
         ItemStack slag = new ItemStack(Material.RAW_IRON, 1);
         ItemMeta meta = slag.getItemMeta();
         if (meta != null) {
@@ -270,6 +276,35 @@ public class AncientForge extends Machine {
             slag.setItemMeta(meta);
         }
         return slag;
+    }
+
+    private java.util.Optional<CustomItem> getSlagForRecipe(MetallurgyRecipe recipe) {
+        String key = (recipe.getId() + " " + String.valueOf(recipe.getOutput().customItemId()))
+                .toLowerCase(java.util.Locale.ROOT);
+
+        if (key.contains("mithril")) {
+            return java.util.Optional.of(CustomItem.MITHRIL_SLAG);
+        }
+        if (key.contains("soulsteel")) {
+            return java.util.Optional.of(CustomItem.SOULSTEEL_SLAG);
+        }
+        if (key.contains("embersteel")) {
+            return java.util.Optional.of(CustomItem.EMBERSTEEL_SLAG);
+        }
+        if (key.contains("netherite") || key.contains("ancient_debris")) {
+            return java.util.Optional.of(CustomItem.NETHERITE_SLAG);
+        }
+        if (key.contains("gold")) {
+            return java.util.Optional.of(CustomItem.GOLD_SLAG);
+        }
+        if (key.contains("iron")) {
+            return java.util.Optional.of(CustomItem.IRON_SLAG);
+        }
+        if (key.contains("copper")) {
+            return java.util.Optional.of(CustomItem.COPPER_SLAG);
+        }
+
+        return CustomItem.getSlagForMaterial(recipe.getOutput().material());
     }
 
     private final java.util.Random random = new java.util.Random();

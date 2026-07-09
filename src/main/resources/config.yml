@@ -102,6 +102,96 @@ progression:
     "minecraft:deepslate_diamond_ore": 6
     "mithril-ore": 7
     "minecraft:ancient_debris": 8
+  # Tier cua tool vanilla. Plugin dung bang nay de kiem tra progression dao quang.
+  vanilla-tool-tiers:
+    WOODEN_PICKAXE: 1
+    STONE_PICKAXE: 2
+    GOLDEN_PICKAXE: 2
+    COPPER_PICKAXE: 4
+    IRON_PICKAXE: 6
+    DIAMOND_PICKAXE: 7
+    NETHERITE_PICKAXE: 9
+
+  # Thong so cho item plugin. Item van co the dung texture/model vanilla,
+  # nhung tier, durability va attribute duoc gan khi plugin tao item.
+  custom-item-stats:
+    copper_slag_pickaxe:
+      tier: 3
+      max-damage: 95
+      attack-damage: 2.0
+      attack-speed: -2.8
+      mining-efficiency: 1.5
+      block-break-speed: 0.0
+    copper_pickaxe:
+      tier: 4
+      max-damage: 165
+      attack-damage: 2.0
+      attack-speed: -2.8
+      mining-efficiency: 2.5
+      block-break-speed: 0.0
+    iron_slag_pickaxe:
+      tier: 5
+      max-damage: 190
+      attack-damage: 3.0
+      attack-speed: -2.8
+      mining-efficiency: 3.5
+      block-break-speed: 0.0
+    gold_slag_pickaxe:
+      tier: 1
+      max-damage: 24
+      attack-damage: 1.0
+      attack-speed: -2.8
+      mining-efficiency: 8.0
+      block-break-speed: 0.0
+    embersteel_slag_pickaxe:
+      tier: 3
+      max-damage: 120
+      attack-damage: 2.0
+      attack-speed: -2.8
+      mining-efficiency: 2.0
+      block-break-speed: 0.0
+    embersteel_pickaxe:
+      tier: 4
+      max-damage: 210
+      attack-damage: 3.0
+      attack-speed: -2.8
+      mining-efficiency: 3.0
+      block-break-speed: 0.0
+    soulsteel_slag_pickaxe:
+      tier: 7
+      max-damage: 850
+      attack-damage: 3.0
+      attack-speed: -2.8
+      mining-efficiency: 5.0
+      block-break-speed: 0.0
+    soulsteel_pickaxe:
+      tier: 8
+      max-damage: 1420
+      attack-damage: 4.0
+      attack-speed: -2.8
+      mining-efficiency: 6.0
+      block-break-speed: 0.0
+    netherite_slag_pickaxe:
+      tier: 8
+      max-damage: 1200
+      attack-damage: 3.0
+      attack-speed: -2.8
+      mining-efficiency: 7.0
+      block-break-speed: 0.0
+    mithril_pickaxe:
+      tier: 8
+      max-damage: 1800
+      attack-damage: 4.0
+      attack-speed: -2.8
+      mining-efficiency: 7.0
+      block-break-speed: 0.0
+    mithril_slag_pickaxe:
+      tier: 7
+      max-damage: 900
+      attack-damage: 3.0
+      attack-speed: -2.8
+      mining-efficiency: 5.5
+      block-break-speed: 0.0
 
 # ── Fail rate (Phase 5 — để trống ở Phase 1) ─────────────────
 fail:
@@ -128,3 +218,4 @@ forge-model:
     x: 0.5
     y: 0.0    # Nâng display lên 0.5 block so với bản trước
     z: 0.5
+

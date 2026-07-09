@@ -1,6 +1,7 @@
 package dev.haohansmp.metallurgy.config;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
+import dev.haohansmp.metallurgy.item.CustomItem;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -38,6 +39,8 @@ public class ConfigManager {
     private Material soulOreMaterial;
     private Material mithrilOreMaterial;
     private Map<String, Integer> miningRequirements;
+    private Map<CustomItem, CustomItemStats> customItemStats;
+    private Map<Material, Integer> vanillaToolTiers;
 
     // Heat & Cooling capacities (Phase 5)
     private Map<Material, Integer> fuelLimits;
@@ -84,6 +87,8 @@ public class ConfigManager {
     public Material getSoulOreMaterial()  { return soulOreMaterial; }
     public Material getMithrilOreMaterial() { return mithrilOreMaterial; }
     public Map<String, Integer> getMiningRequirements() { return miningRequirements; }
+    public CustomItemStats getCustomItemStats(CustomItem item) { return customItemStats.getOrDefault(item, CustomItemStats.empty()); }
+    public int getVanillaToolTier(Material material) { return vanillaToolTiers.getOrDefault(material, 0); }
 
     public Map<Material, Integer> getFuelLimits() { return fuelLimits; }
     public Map<Material, Integer> getCoolants()   { return coolants; }
@@ -154,6 +159,7 @@ public class ConfigManager {
         }
 
         loadMiningRequirements();
+        loadToolProgression();
         loadFuelValues();
         loadFuelLimits();
         loadCoolants();
@@ -211,6 +217,61 @@ public class ConfigManager {
 
         for (String key : section.getKeys(false)) {
             miningRequirements.put(key, section.getInt(key));
+        }
+    }
+
+    private void loadToolProgression() {
+        vanillaToolTiers = new EnumMap<>(Material.class);
+        vanillaToolTiers.put(Material.WOODEN_PICKAXE, 1);
+        vanillaToolTiers.put(Material.STONE_PICKAXE, 2);
+        vanillaToolTiers.put(Material.GOLDEN_PICKAXE, 2);
+        vanillaToolTiers.put(Material.COPPER_PICKAXE, 4);
+        vanillaToolTiers.put(Material.IRON_PICKAXE, 6);
+        vanillaToolTiers.put(Material.DIAMOND_PICKAXE, 7);
+        vanillaToolTiers.put(Material.NETHERITE_PICKAXE, 9);
+        var vanillaSection = config.getConfigurationSection("progression.vanilla-tool-tiers");
+        if (vanillaSection != null) {
+            for (String key : vanillaSection.getKeys(false)) {
+                Material mat = Material.matchMaterial(key);
+                if (mat == null) {
+                    plugin.getPluginLogger().warn("Unknown vanilla tool material in config: " + key);
+                    continue;
+                }
+                vanillaToolTiers.put(mat, vanillaSection.getInt(key));
+            }
+        }
+
+        customItemStats = new EnumMap<>(CustomItem.class);
+        customItemStats.put(CustomItem.COPPER_SLAG_PICKAXE, new CustomItemStats(3, 95, 2.0, -2.8, 1.5, 0.0));
+        customItemStats.put(CustomItem.COPPER_PICKAXE, new CustomItemStats(4, 165, 2.0, -2.8, 2.5, 0.0));
+        customItemStats.put(CustomItem.IRON_SLAG_PICKAXE, new CustomItemStats(5, 190, 3.0, -2.8, 3.5, 0.0));
+        customItemStats.put(CustomItem.GOLD_SLAG_PICKAXE, new CustomItemStats(1, 24, 1.0, -2.8, 8.0, 0.0));
+        customItemStats.put(CustomItem.EMBERSTEEL_SLAG_PICKAXE, new CustomItemStats(3, 120, 2.0, -2.8, 2.0, 0.0));
+        customItemStats.put(CustomItem.EMBERSTEEL_PICKAXE, new CustomItemStats(4, 210, 3.0, -2.8, 3.0, 0.0));
+        customItemStats.put(CustomItem.SOULSTEEL_SLAG_PICKAXE, new CustomItemStats(7, 850, 3.0, -2.8, 5.0, 0.0));
+        customItemStats.put(CustomItem.SOULSTEEL_PICKAXE, new CustomItemStats(8, 1420, 4.0, -2.8, 6.0, 0.0));
+        customItemStats.put(CustomItem.NETHERITE_SLAG_PICKAXE, new CustomItemStats(8, 1200, 3.0, -2.8, 7.0, 0.0));
+        customItemStats.put(CustomItem.MITHRIL_PICKAXE, new CustomItemStats(8, 1800, 4.0, -2.8, 7.0, 0.0));
+        customItemStats.put(CustomItem.MITHRIL_SLAG_PICKAXE, new CustomItemStats(7, 900, 3.0, -2.8, 5.5, 0.0));
+        var customSection = config.getConfigurationSection("progression.custom-item-stats");
+        if (customSection != null) {
+            for (String key : customSection.getKeys(false)) {
+                java.util.Optional<CustomItem> itemOpt = CustomItem.getById(key);
+                if (itemOpt.isEmpty()) {
+                    plugin.getPluginLogger().warn("Unknown custom item stats entry in config: " + key);
+                    continue;
+                }
+
+                String path = "progression.custom-item-stats." + key + ".";
+                CustomItemStats stats = new CustomItemStats(
+                        config.getInt(path + "tier", 0),
+                        config.getInt(path + "max-damage", 0),
+                        config.getDouble(path + "attack-damage", 0.0),
+                        config.getDouble(path + "attack-speed", 0.0),
+                        config.getDouble(path + "mining-efficiency", 0.0),
+                        config.getDouble(path + "block-break-speed", 0.0));
+                customItemStats.put(itemOpt.get(), stats);
+            }
         }
     }
 

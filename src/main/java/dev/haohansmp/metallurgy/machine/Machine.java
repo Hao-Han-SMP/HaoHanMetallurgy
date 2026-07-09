@@ -1,6 +1,7 @@
 package dev.haohansmp.metallurgy.machine;
 
 import dev.haohansmp.metallurgy.HaoHanMetallurgy;
+import dev.haohansmp.metallurgy.item.CustomItem;
 import dev.haohansmp.metallurgy.recipe.MetallurgyRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -421,10 +422,13 @@ public abstract class Machine {
             location.getWorld().playSound(location, org.bukkit.Sound.ENTITY_GENERIC_BURN, 0.5f, 1.0f);
         }
 
-        // Tạo vật phẩm Slag (Xỉ Thải) bằng Than củi
-        ItemStack slag = new ItemStack(Material.RAW_IRON, 1);
+        ItemStack slag = buildMetalSlag(currentRecipe);
+        boolean customMetalSlag = slag != null;
+        if (!customMetalSlag) {
+            slag = new ItemStack(Material.RAW_IRON, 1);
+        }
         org.bukkit.inventory.meta.ItemMeta meta = slag.getItemMeta();
-        if (meta != null) {
+        if (!customMetalSlag && meta != null) {
             String metalName = currentRecipe == null ? "kim lo\u1ea1i" : currentRecipe.getOutput().material().name()
                     .toLowerCase(java.util.Locale.ROOT)
                     .replace("_ingot", "")
@@ -460,6 +464,45 @@ public abstract class Machine {
         }
 
         reset();
+    }
+
+    private ItemStack buildMetalSlag(MetallurgyRecipe recipe) {
+        if (recipe == null) {
+            return null;
+        }
+
+        return getSlagForRecipe(recipe)
+                .map(customItem -> plugin.getItemManager().createItem(customItem, 1))
+                .orElse(null);
+    }
+
+    private java.util.Optional<CustomItem> getSlagForRecipe(MetallurgyRecipe recipe) {
+        String key = (recipe.getId() + " " + String.valueOf(recipe.getOutput().customItemId()))
+                .toLowerCase(java.util.Locale.ROOT);
+
+        if (key.contains("mithril")) {
+            return java.util.Optional.of(CustomItem.MITHRIL_SLAG);
+        }
+        if (key.contains("soulsteel")) {
+            return java.util.Optional.of(CustomItem.SOULSTEEL_SLAG);
+        }
+        if (key.contains("embersteel")) {
+            return java.util.Optional.of(CustomItem.EMBERSTEEL_SLAG);
+        }
+        if (key.contains("netherite") || key.contains("ancient_debris")) {
+            return java.util.Optional.of(CustomItem.NETHERITE_SLAG);
+        }
+        if (key.contains("gold")) {
+            return java.util.Optional.of(CustomItem.GOLD_SLAG);
+        }
+        if (key.contains("iron")) {
+            return java.util.Optional.of(CustomItem.IRON_SLAG);
+        }
+        if (key.contains("copper")) {
+            return java.util.Optional.of(CustomItem.COPPER_SLAG);
+        }
+
+        return CustomItem.getSlagForMaterial(recipe.getOutput().material());
     }
 
     private String formatLocation() {

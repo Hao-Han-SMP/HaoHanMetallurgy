@@ -50,6 +50,20 @@ public enum CustomItem {
         "§bSoulsteel Pickaxe",
         List.of("§7Cúp tâm linh tối thượng.", "§7Đủ sức khai thác §dAncient Debris§7.", "§8Tier: §c3")
     ),
+    EMBERSTEEL_SLAG(
+        "embersteel_slag",
+        Material.MAGMA_CREAM,
+        1024,
+        "§6Embersteel Slag",
+        List.of("§7Impure residue from Embersteel forging.", "§8Used to cast a slag pickaxe.")
+    ),
+    SOULSTEEL_SLAG(
+        "soulsteel_slag",
+        Material.ECHO_SHARD,
+        1025,
+        "§3Soulsteel Slag",
+        List.of("§7Cold residue from imperfect Soulsteel work.", "§8Used to cast a slag pickaxe.")
+    ),
     COPPER_SLAG(
         "copper_slag",
         Material.BRICK,
@@ -64,6 +78,27 @@ public enum CustomItem {
         "§8Iron Slag",
         List.of("§7Sỉ sắt thu được từ nung quặng hao hụt.", "§8Dùng để làm cúp sỉ sắt.")
     ),
+    GOLD_SLAG(
+        "gold_slag",
+        Material.GOLD_NUGGET,
+        1020,
+        "§6Gold Slag",
+        List.of("§7Residue left after imperfect gold smelting.", "§8A trace of precious metal remains inside.")
+    ),
+    NETHERITE_SLAG(
+        "netherite_slag",
+        Material.NETHERITE_SCRAP,
+        1021,
+        "§5Netherite Slag",
+        List.of("§7Dense residue from failed ancient alloy work.", "§8Too impure to use as netherite scrap.")
+    ),
+    MITHRIL_SLAG(
+        "mithril_slag",
+        Material.PRISMARINE_CRYSTALS,
+        1022,
+        "§bMithril Slag",
+        List.of("§7Pale slag left after refining mithril ore.", "§8Still glimmers with cold metal dust.")
+    ),
     COPPER_SLAG_PICKAXE(
         "copper_slag_pickaxe",
         Material.STONE_PICKAXE,
@@ -73,8 +108,8 @@ public enum CustomItem {
     ),
     COPPER_PICKAXE(
         "copper_pickaxe",
-        Material.STONE_PICKAXE,
-        1014,
+        Material.COPPER_PICKAXE,
+        0,
         "§6Copper Pickaxe",
         List.of("§7Cúp đồng tinh luyện chắc chắn.", "§8Tier: §c4")
     ),
@@ -84,6 +119,34 @@ public enum CustomItem {
         1015,
         "§8Iron Slag Pickaxe",
         List.of("§7Cúp được đúc tạm thời từ sỉ sắt.", "§8Tier: §c5")
+    ),
+    GOLD_SLAG_PICKAXE(
+        "gold_slag_pickaxe",
+        Material.GOLDEN_PICKAXE,
+        1026,
+        "§6Gold Slag Pickaxe",
+        List.of("§7Brittle pickaxe cast from gold slag.", "§8Tier: §c1")
+    ),
+    EMBERSTEEL_SLAG_PICKAXE(
+        "embersteel_slag_pickaxe",
+        Material.IRON_PICKAXE,
+        1027,
+        "§6Embersteel Slag Pickaxe",
+        List.of("§7Impure Embersteel pickaxe.", "§8Tier: §c3")
+    ),
+    SOULSTEEL_SLAG_PICKAXE(
+        "soulsteel_slag_pickaxe",
+        Material.DIAMOND_PICKAXE,
+        1028,
+        "§3Soulsteel Slag Pickaxe",
+        List.of("§7Impure Soulsteel pickaxe.", "§8Tier: §c7")
+    ),
+    NETHERITE_SLAG_PICKAXE(
+        "netherite_slag_pickaxe",
+        Material.NETHERITE_PICKAXE,
+        1029,
+        "§5Netherite Slag Pickaxe",
+        List.of("§7Unrefined netherite pickaxe.", "§8Tier: §c8")
     ),
     MITHRIL_SHARD(
         "mithril_shard",
@@ -105,6 +168,13 @@ public enum CustomItem {
         1019,
         "§bMithril Pickaxe",
         List.of("§7Cúp rèn từ Mithril tinh khiết.", "§7Đủ sức khai thác §5Ancient Debris§7.", "§8Tier: §c8")
+    ),
+    MITHRIL_SLAG_PICKAXE(
+        "mithril_slag_pickaxe",
+        Material.DIAMOND_PICKAXE,
+        1023,
+        "§3Mithril Slag Pickaxe",
+        List.of("§7Cúp đúc từ mithril lẫn tạp chất.", "§7Mạnh hơn kim cương nhưng kém Mithril tinh luyện.", "§8Tier: §c7")
     );
 
     private final String id;
@@ -150,6 +220,37 @@ public enum CustomItem {
                 return java.util.Optional.of(item);
             }
         }
+        return java.util.Optional.empty();
+    }
+
+    public static java.util.Optional<CustomItem> getSlagForMaterial(Material material) {
+        if (material == null) {
+            return java.util.Optional.empty();
+        }
+
+        String name = material.name();
+        if (name.contains("COPPER")) {
+            return java.util.Optional.of(COPPER_SLAG);
+        }
+        if (name.contains("ECHO")) {
+            return java.util.Optional.of(SOULSTEEL_SLAG);
+        }
+        if (name.contains("MAGMA")) {
+            return java.util.Optional.of(EMBERSTEEL_SLAG);
+        }
+        if (name.contains("IRON")) {
+            return java.util.Optional.of(IRON_SLAG);
+        }
+        if (name.contains("GOLD")) {
+            return java.util.Optional.of(GOLD_SLAG);
+        }
+        if (name.contains("NETHERITE") || name.contains("ANCIENT_DEBRIS")) {
+            return java.util.Optional.of(NETHERITE_SLAG);
+        }
+        if (name.contains("PRISMARINE")) {
+            return java.util.Optional.of(MITHRIL_SLAG);
+        }
+
         return java.util.Optional.empty();
     }
 }

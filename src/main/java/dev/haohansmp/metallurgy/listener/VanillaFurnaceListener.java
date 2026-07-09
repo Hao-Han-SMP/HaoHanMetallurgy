@@ -54,10 +54,9 @@ public class VanillaFurnaceListener implements Listener {
             double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
             if (rand < VANILLA_FURNACE_FAIL_CHANCE) {
                 ItemStack slagResult;
-                if (source.name().contains("IRON")) {
-                    slagResult = plugin.getItemManager().createItem(CustomItem.IRON_SLAG, 1);
-                } else if (source.name().contains("COPPER")) {
-                    slagResult = plugin.getItemManager().createItem(CustomItem.COPPER_SLAG, 1);
+                java.util.Optional<CustomItem> customSlag = CustomItem.getSlagForMaterial(source);
+                if (customSlag.isPresent()) {
+                    slagResult = plugin.getItemManager().createItem(customSlag.get(), 1);
                 } else {
                     slagResult = new ItemStack(Material.CHARCOAL, 1);
                     org.bukkit.inventory.meta.ItemMeta meta = slagResult.getItemMeta();

@@ -38,15 +38,40 @@ public class RecipeLoader {
         recipesByMachine.clear();
 
         File recipeDir = new File(plugin.getDataFolder(), "recipes");
-        if (!recipeDir.exists()) {
-            recipeDir.mkdirs();
-            // Copy default recipes từ resources
-            plugin.saveResource("recipes/example_forge.json", false);
-            plugin.saveResource("recipes/raw_iron_smelting.json", false);
-            plugin.saveResource("recipes/raw_copper_smelting.json", false);
-            plugin.saveResource("recipes/raw_gold_smelting.json", false);
-            plugin.saveResource("recipes/netherite_ingot_smelting.json", false);
-            plugin.saveResource("recipes/mithril_ingot_smelting.json", false);
+        if (!recipeDir.exists() && !recipeDir.mkdirs()) {
+            plugin.getPluginLogger().error("Cannot create recipes directory: " + recipeDir.getPath());
+            return;
+        }
+
+        for (String fileName : List.of(
+                "example_forge.json",
+                "raw_iron_smelting.json",
+                "raw_copper_smelting.json",
+                "raw_gold_smelting.json",
+                "netherite_ingot_smelting.json",
+                "mithril_ingot_smelting.json",
+                "soulsteel_ingot_smelting.json",
+                "copper_slag_recycling.json",
+                "iron_slag_recycling.json",
+                "gold_slag_recycling.json",
+                "netherite_slag_recycling.json",
+                "mithril_slag_recycling.json")) {
+            File target = new File(recipeDir, fileName);
+            if (!target.exists()) {
+                plugin.saveResource("recipes/" + fileName, false);
+            } else if (needsBundledRecipeMigration(target)) {
+                try {
+                    Path backup = target.toPath().resolveSibling(fileName + ".before-v4.bak");
+                    if (!Files.exists(backup)) {
+                        Files.copy(target.toPath(), backup);
+                    }
+                    plugin.saveResource("recipes/" + fileName, true);
+                    plugin.getPluginLogger().info("Migrated bundled recipe to temperature-quality schema: "
+                            + fileName + " (backup: " + backup.getFileName() + ")");
+                } catch (IOException e) {
+                    plugin.getPluginLogger().error("Could not migrate bundled recipe: " + fileName, e);
+                }
+            }
         }
 
         File[] files;
@@ -106,9 +131,21 @@ public class RecipeLoader {
         List<MetallurgyRecipe.Ingredient> inputs = new ArrayList<>();
         for (JsonElement el : obj.getAsJsonArray("inputs")) {
             JsonObject inp = el.getAsJsonObject();
-            Material mat = requireMaterial(inp.get("material").getAsString(), file);
-            if (mat == null) return null;
-            inputs.add(new MetallurgyRecipe.Ingredient(mat, inp.get("amount").getAsInt()));
+            String customItem = inp.has("custom_item") ? inp.get("custom_item").getAsString() : null;
+            Material mat = null;
+            if (customItem != null) {
+                java.util.Optional<dev.haohansmp.metallurgy.item.CustomItem> ciOpt = dev.haohansmp.metallurgy.item.CustomItem.getById(customItem);
+                if (ciOpt.isPresent()) {
+                    mat = ciOpt.get().getMaterial();
+                } else {
+                    plugin.getPluginLogger().error("Unknown custom item ID '" + customItem + "' in inputs in " + file.getName());
+                    return null;
+                }
+            } else {
+                mat = requireMaterial(inp.get("material").getAsString(), file);
+                if (mat == null) return null;
+            }
+            inputs.add(new MetallurgyRecipe.Ingredient(mat, inp.get("amount").getAsInt(), customItem));
         }
 
         // Parse output
@@ -148,6 +185,9 @@ public class RecipeLoader {
         int fuelCost     = obj.has("fuel_cost")       ? obj.get("fuel_cost").getAsInt()       : 0;
         int timeSeconds  = obj.has("time_seconds")    ? obj.get("time_seconds").getAsInt()    : 10;
         int minTemp      = obj.has("min_temperature") ? obj.get("min_temperature").getAsInt() : 0;
+        int purificationTemp = obj.has("purification_temperature")
+                ? obj.get("purification_temperature").getAsInt()
+                : minTemp;
         int maxTemp      = obj.has("max_temperature") ? obj.get("max_temperature").getAsInt() : (minTemp + 400);
         String reqAdv    = obj.has("required_advancement") ? obj.get("required_advancement").getAsString() : null;
 
@@ -168,7 +208,43 @@ public class RecipeLoader {
             }
         }
 
-        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds, minTemp, maxTemp, reqAdv, failChance);
+        double underheatFailChance = obj.has("underheat_fail_chance")
+                ? obj.get("underheat_fail_chance").getAsDouble()
+                : failChance;
+
+        List<Material> requiredAdditives = new ArrayList<>();
+        if (obj.has("additive")) {
+            String addStr = obj.get("additive").getAsString();
+            Material additive = requireMaterial(addStr, file);
+            if (additive == null) return null;
+            requiredAdditives.add(additive);
+        }
+        if (obj.has("additives")) {
+            for (JsonElement element : obj.getAsJsonArray("additives")) {
+                Material additive = requireMaterial(element.getAsString(), file);
+                if (additive == null) return null;
+                if (!requiredAdditives.contains(additive)) requiredAdditives.add(additive);
+            }
+        }
+        int additiveAmount = obj.has("additive_amount") ? obj.get("additive_amount").getAsInt() : 1;
+        double additiveCleanOutputBonus = obj.has("additive_clean_output_bonus")
+                ? obj.get("additive_clean_output_bonus").getAsDouble()
+                : -1.0;
+        boolean requiresColdQuench = obj.has("requires_cold_quench")
+                && obj.get("requires_cold_quench").getAsBoolean();
+        boolean requiresSoulFire = obj.has("requires_soul_fire")
+                && obj.get("requires_soul_fire").getAsBoolean();
+
+        if (purificationTemp < minTemp || purificationTemp > maxTemp) {
+            plugin.getPluginLogger().error("Invalid purification temperature in " + file.getName()
+                    + ": expected " + minTemp + " <= purification_temperature <= " + maxTemp);
+            return null;
+        }
+
+        return new MetallurgyRecipe(id, machineTypeStr, inputs, output, fuelCost, timeSeconds,
+                minTemp, purificationTemp, maxTemp, reqAdv, failChance, underheatFailChance,
+                requiredAdditives, additiveAmount, additiveCleanOutputBonus,
+                requiresColdQuench, requiresSoulFire);
     }
 
     private Material requireMaterial(String name, File file) {
@@ -177,6 +253,18 @@ public class RecipeLoader {
             plugin.getPluginLogger().error("Unknown material '" + name + "' in " + file.getName());
         }
         return mat;
+    }
+
+    private boolean needsBundledRecipeMigration(File file) {
+        try {
+            JsonObject object = JsonParser.parseString(
+                    Files.readString(file.toPath(), StandardCharsets.UTF_8)).getAsJsonObject();
+            return !object.has("_schema_version") || object.get("_schema_version").getAsInt() < 4;
+        } catch (Exception e) {
+            plugin.getPluginLogger().warn("Skipping migration check for invalid recipe " + file.getName()
+                    + ": " + e.getMessage());
+            return false;
+        }
     }
 
     private void register(MetallurgyRecipe recipe) {

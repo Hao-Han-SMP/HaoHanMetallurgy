@@ -1,0 +1,22 @@
+{
+  "_schema_version": 4,
+  "id": "ancient_forge/copper_slag_recycling",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "custom_item": "copper_slag", "amount": 4 }
+  ],
+  "output": {
+    "material": "COPPER_INGOT",
+    "amount": 1
+  },
+  "fuel_cost": 300,
+  "time_seconds": 15,
+  "min_temperature": 900,
+  "purification_temperature": 1250,
+  "max_temperature": 1450,
+  "fail_chance": 0.20,
+  "underheat_fail_chance": 0.90,
+  "additives": ["SAND", "RED_SAND"],
+  "additive_amount": 1,
+  "additive_clean_output_bonus": 0.25
+}

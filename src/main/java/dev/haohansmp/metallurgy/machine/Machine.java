@@ -32,7 +32,12 @@ public abstract class Machine {
     // ── Temperature & Fuel ────────────────────────────────────
     private int temperature = 0;
     private int fuelTicksRemaining = 0;
-    private int activeFuelLimit = 2000;
+    private int fuelTicksRemaining2 = 0;
+    private Material activeFuelType1 = null;
+    private Material activeFuelType2 = null;
+    private boolean hasAdditive = false;
+    private long processTemperatureTotal = 0L;
+    private int processTemperatureTicks = 0;
 
     // ── Persistent Inventory ──────────────────────────────────
     protected Inventory inventory;
@@ -88,11 +93,46 @@ public abstract class Machine {
             return false;
         if (temperature < recipe.getMinTemperature())
             return false;
+        if (recipe.requiresColdQuench() && !hasColdQuenchEnvironment())
+            return false;
+        if (recipe.requiresSoulFire() && !hasSoulFireEnvironment())
+            return false;
+
+        // Check and consume additive
+        int additiveSlot = plugin.getConfigManager().getAdditiveSlot();
+        ItemStack additiveItem = inventory.getItem(additiveSlot);
+        boolean requiresAdditive = !recipe.getRequiredAdditives().isEmpty();
+        if (requiresAdditive && (additiveItem == null
+                || !recipe.acceptsAdditive(additiveItem.getType())
+                || additiveItem.getAmount() < recipe.getAdditiveAmount())) {
+            return false;
+        }
+        boolean hasCorrectAdditive = additiveItem != null && (requiresAdditive
+                ? recipe.acceptsAdditive(additiveItem.getType())
+                : plugin.getConfigManager().isDefaultAdditive(additiveItem.getType()));
+
+        if (hasCorrectAdditive) {
+            this.hasAdditive = true;
+            int consumed = requiresAdditive ? recipe.getAdditiveAmount() : 1;
+            int left = additiveItem.getAmount() - consumed;
+            if (left > 0) {
+                additiveItem.setAmount(left);
+                inventory.setItem(additiveSlot, additiveItem);
+            } else {
+                inventory.setItem(additiveSlot, null);
+            }
+        } else {
+            this.hasAdditive = false;
+        }
 
         this.currentRecipe = recipe;
         this.progressTicks = 0;
-        // Giảm thời gian rèn xuống 1 phần 5 (time-multiplier = 0.2) để nung cực nhanh
-        this.totalTicks = Math.max(1, (recipe.getTimeSeconds() * 20) / 5);
+        this.processTemperatureTotal = 0L;
+        this.processTemperatureTicks = 0;
+        // Giảm thời gian rèn theo cấu hình time-speed-multiplier (mặc định = 5.0 để nung cực nhanh)
+        double speed = plugin.getConfigManager().getTimeSpeedMultiplier();
+        if (speed <= 0.0) speed = 1.0;
+        this.totalTicks = Math.max(1, (int) Math.round((recipe.getTimeSeconds() * 20) / speed));
         this.state = MachineState.WORKING;
 
         plugin.getPluginLogger().debug(
@@ -120,6 +160,9 @@ public abstract class Machine {
         currentRecipe = null;
         progressTicks = 0;
         totalTicks = 0;
+        hasAdditive = false;
+        processTemperatureTotal = 0L;
+        processTemperatureTicks = 0;
     }
 
     /**
@@ -135,14 +178,20 @@ public abstract class Machine {
      * Phase 1: trả về Map đơn giản.
      */
     public Map<String, Object> serialize() {
-        return Map.of(
-                "type", type.name(),
-                "state", state.name(),
-                "recipe", currentRecipe != null ? currentRecipe.getId() : "",
-                "progress", progressTicks,
-                "total", totalTicks,
-                "temperature", temperature,
-                "fuel", fuelTicksRemaining);
+        return Map.ofEntries(
+                Map.entry("type", type.name()),
+                Map.entry("state", state.name()),
+                Map.entry("recipe", currentRecipe != null ? currentRecipe.getId() : ""),
+                Map.entry("progress", progressTicks),
+                Map.entry("total", totalTicks),
+                Map.entry("temperature", temperature),
+                Map.entry("fuel", fuelTicksRemaining),
+                Map.entry("fuel2", fuelTicksRemaining2),
+                Map.entry("active_fuel_type_1", activeFuelType1 == null ? "" : activeFuelType1.name()),
+                Map.entry("active_fuel_type_2", activeFuelType2 == null ? "" : activeFuelType2.name()),
+                Map.entry("has_additive", hasAdditive),
+                Map.entry("process_temperature_total", processTemperatureTotal),
+                Map.entry("process_temperature_ticks", processTemperatureTicks));
     }
 
     // ── Getters ───────────────────────────────────────────────
@@ -176,7 +225,84 @@ public abstract class Machine {
     }
 
     public int getFuelTicksRemaining() {
+        return Math.max(fuelTicksRemaining, fuelTicksRemaining2);
+    }
+
+    public int getFuelTicksRemaining1() {
         return fuelTicksRemaining;
+    }
+
+    public int getFuelTicksRemaining2() {
+        return fuelTicksRemaining2;
+    }
+
+    public Material getActiveFuelType1() {
+        return activeFuelType1;
+    }
+
+    public Material getActiveFuelType2() {
+        return activeFuelType2;
+    }
+
+    public boolean isHasAdditive() {
+        return hasAdditive;
+    }
+
+    public boolean hasRequiredAdditive(MetallurgyRecipe recipe) {
+        if (recipe.getRequiredAdditives().isEmpty()) return true;
+        ItemStack additive = inventory.getItem(plugin.getConfigManager().getAdditiveSlot());
+        return additive != null && recipe.acceptsAdditive(additive.getType())
+                && additive.getAmount() >= recipe.getAdditiveAmount();
+    }
+
+    public boolean hasColdQuenchEnvironment() {
+        if (location.getBlock().getTemperature() < 0.2) return true;
+        return hasNearbyMaterial(java.util.Set.of(
+                Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE,
+                Material.FROSTED_ICE, Material.SNOW_BLOCK, Material.POWDER_SNOW));
+    }
+
+    public boolean hasSoulFireEnvironment() {
+        return hasNearbyMaterial(java.util.Set.of(
+                Material.SOUL_FIRE, Material.SOUL_CAMPFIRE, Material.SOUL_LANTERN));
+    }
+
+    private boolean hasNearbyMaterial(java.util.Set<Material> materials) {
+        org.bukkit.World world = location.getWorld();
+        if (world == null) return false;
+        int centerX = location.getBlockX();
+        int centerY = location.getBlockY();
+        int centerZ = location.getBlockZ();
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -1; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (materials.contains(world.getBlockAt(centerX + dx, centerY + dy, centerZ + dz).getType())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public int getAverageProcessTemperature() {
+        return processTemperatureTicks <= 0
+                ? temperature
+                : (int) Math.round(processTemperatureTotal / (double) processTemperatureTicks);
+    }
+
+    public double getEstimatedCleanOutputChance() {
+        if (currentRecipe == null) return 0.0;
+        if (!plugin.getConfigManager().isFailEnabled()) return 1.0;
+        return 1.0 - calculateFinalFailChance(currentRecipe, getAverageProcessTemperature());
+    }
+
+    public double getActiveAdditiveCleanOutputBonus() {
+        if (currentRecipe == null || !hasAdditive) return 0.0;
+        double recipeBonus = currentRecipe.getAdditiveCleanOutputBonus();
+        return recipeBonus >= 0.0
+                ? recipeBonus
+                : plugin.getConfigManager().getDefaultAdditiveCleanOutputBonus();
     }
 
     public Inventory getInventory() {
@@ -192,9 +318,7 @@ public abstract class Machine {
 
     public void addFuel(int ticks, Material fuelType) {
         this.fuelTicksRemaining += ticks;
-        // Cập nhật giới hạn nhiệt độ theo cấu hình của nhiên liệu
-        int limit = plugin.getConfigManager().getFuelLimits().getOrDefault(fuelType, 2000);
-        this.activeFuelLimit = limit;
+        this.activeFuelType1 = fuelType;
     }
 
     public void coolDown(int amount) {
@@ -209,7 +333,11 @@ public abstract class Machine {
 
     public void boostTemperature(int amount) {
         int maxTemp = plugin.getConfigManager().getTempMax();
-        int currentLimit = Math.min(activeFuelLimit, maxTemp);
+
+        Material activeType1 = fuelTicksRemaining > 0 ? activeFuelType1 : null;
+        Material activeType2 = fuelTicksRemaining2 > 0 ? activeFuelType2 : null;
+        int combinedLimit = plugin.getConfigManager().getCombinedFuelLimit(activeType1, activeType2);
+        int currentLimit = Math.min(combinedLimit, maxTemp);
 
         // Thổi khí cho phép nhiệt tăng vượt giới hạn nhiên liệu 150°C nhưng không quá
         // maxTemp
@@ -242,12 +370,57 @@ public abstract class Machine {
         this.fuelTicksRemaining = fuelTicksRemaining;
     }
 
+    public void setFuelTicksRemaining2(int fuelTicksRemaining2) {
+        this.fuelTicksRemaining2 = fuelTicksRemaining2;
+    }
+
+    public void setActiveFuelType1(Material activeFuelType1) {
+        this.activeFuelType1 = activeFuelType1;
+    }
+
+    public void setActiveFuelType2(Material activeFuelType2) {
+        this.activeFuelType2 = activeFuelType2;
+    }
+
+    public void setHasAdditive(boolean hasAdditive) {
+        this.hasAdditive = hasAdditive;
+    }
+
+    public void setProcessTemperatureTotal(long processTemperatureTotal) {
+        this.processTemperatureTotal = Math.max(0L, processTemperatureTotal);
+    }
+
+    public void setProcessTemperatureTicks(int processTemperatureTicks) {
+        this.processTemperatureTicks = Math.max(0, processTemperatureTicks);
+    }
+
+    public long getProcessTemperatureTotal() {
+        return processTemperatureTotal;
+    }
+
+    public int getProcessTemperatureTicks() {
+        return processTemperatureTicks;
+    }
+
+    public void setCurrentRecipe(MetallurgyRecipe currentRecipe) {
+        this.currentRecipe = currentRecipe;
+    }
+
+    public void setProgressTicks(int progressTicks) {
+        this.progressTicks = progressTicks;
+    }
+
+    public void setTotalTicks(int totalTicks) {
+        this.totalTicks = totalTicks;
+    }
+
     // ── Internal ───────────────────────────────────────────────
 
     private void updateTemperature() {
         int maxTemp = plugin.getConfigManager().getTempMax();
         int baseRise = plugin.getConfigManager().getTempRisePerTick();
         int baseFall = plugin.getConfigManager().getTempFallPerTick();
+        int elapsedTicks = Math.max(1, plugin.getConfigManager().getTickRate());
 
         // 1. Quét cấu trúc vòng 8 block xung quanh lò
         int insulators = 0;
@@ -303,19 +476,23 @@ public abstract class Machine {
         }
 
         // Khởi động nhiệt độ tối thiểu tại vùng cực nóng (Nether/Desert)
-        if (hotBiome && temperature == 0 && fuelTicksRemaining > 0) {
+        if (hotBiome && temperature == 0 && (fuelTicksRemaining > 0 || fuelTicksRemaining2 > 0)) {
             temperature = 100;
         }
 
         // 3. Tính toán tốc độ tăng/giảm cuối cùng
-        int finalRise = baseRise + conductors * 2;
-        int finalFall = Math.max(0, baseFall + biomeFallMod + rainFallMod + coolers * 2 - (int) (insulators * 0.2));
+        int finalRise = (baseRise + conductors * 2) * elapsedTicks;
+        int finalFall = Math.max(0,
+                baseFall + biomeFallMod + rainFallMod + coolers * 2 - (int) (insulators * 0.2)) * elapsedTicks;
 
         // 4. Giới hạn nhiệt độ tối đa theo Nhiên liệu hoạt động và khối làm mát
-        int currentLimit = Math.min(activeFuelLimit, maxTemp - coolers * 100);
+        Material activeType1 = fuelTicksRemaining > 0 ? activeFuelType1 : null;
+        Material activeType2 = fuelTicksRemaining2 > 0 ? activeFuelType2 : null;
+        int combinedLimit = plugin.getConfigManager().getCombinedFuelLimit(activeType1, activeType2);
+        int currentLimit = Math.min(combinedLimit, maxTemp - coolers * 100);
 
-        // Tiêu thụ nhiên liệu động từ slot nhiên liệu (nếu hết ticks)
-        if (fuelTicksRemaining <= 0 && (state == MachineState.WORKING || temperature < currentLimit)) {
+        // Tiêu thụ nhiên liệu động từ slot nhiên liệu 1 (nếu hết ticks)
+        if (fuelTicksRemaining <= 0) {
             int fuelSlot = dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_FUEL;
             ItemStack fuelItem = inventory.getItem(fuelSlot);
             if (fuelItem != null && fuelItem.getType() != Material.AIR) {
@@ -323,26 +500,78 @@ public abstract class Machine {
                 int ticksPerItem = plugin.getConfigManager().getFuelTicks(mat);
                 var coolants = plugin.getConfigManager().getCoolants();
                 if (ticksPerItem > 0 && !coolants.containsKey(mat)) {
-                    // Tiêu thụ đúng 1 vật phẩm
                     if (fuelItem.getAmount() > 1) {
                         fuelItem.setAmount(fuelItem.getAmount() - 1);
                         inventory.setItem(fuelSlot, fuelItem);
+                    } else if (mat == Material.LAVA_BUCKET) {
+                        inventory.setItem(fuelSlot, new ItemStack(Material.BUCKET));
                     } else {
                         inventory.setItem(fuelSlot, null);
                     }
                     this.fuelTicksRemaining = ticksPerItem;
-                    this.activeFuelLimit = plugin.getConfigManager().getFuelLimits().getOrDefault(mat, 2000);
-                    currentLimit = Math.min(activeFuelLimit, maxTemp - coolers * 100);
+                    this.activeFuelType1 = mat;
+
+                    activeType1 = activeFuelType1;
+                    combinedLimit = plugin.getConfigManager().getCombinedFuelLimit(activeType1, activeType2);
+                    currentLimit = Math.min(combinedLimit, maxTemp - coolers * 100);
+                    temperature = Math.min(currentLimit,
+                            temperature + plugin.getConfigManager().getFuelIgnitionBoost(mat));
                 }
+            } else {
+                this.activeFuelType1 = null;
             }
         }
 
+        // Tiêu thụ nhiên liệu động từ slot nhiên liệu 2 (nếu hết ticks)
+        int fuelSlot2 = plugin.getConfigManager().getFuelSlot2();
+        if (fuelTicksRemaining2 <= 0) {
+            ItemStack fuelItem = inventory.getItem(fuelSlot2);
+            if (fuelItem != null && fuelItem.getType() != Material.AIR) {
+                Material mat = fuelItem.getType();
+                int ticksPerItem = plugin.getConfigManager().getFuelTicks(mat);
+                var coolants = plugin.getConfigManager().getCoolants();
+                if (ticksPerItem > 0 && !coolants.containsKey(mat)) {
+                    if (fuelItem.getAmount() > 1) {
+                        fuelItem.setAmount(fuelItem.getAmount() - 1);
+                        inventory.setItem(fuelSlot2, fuelItem);
+                    } else if (mat == Material.LAVA_BUCKET) {
+                        inventory.setItem(fuelSlot2, new ItemStack(Material.BUCKET));
+                    } else {
+                        inventory.setItem(fuelSlot2, null);
+                    }
+                    this.fuelTicksRemaining2 = ticksPerItem;
+                    this.activeFuelType2 = mat;
+
+                    activeType2 = activeFuelType2;
+                    combinedLimit = plugin.getConfigManager().getCombinedFuelLimit(activeType1, activeType2);
+                    currentLimit = Math.min(combinedLimit, maxTemp - coolers * 100);
+                    temperature = Math.min(currentLimit,
+                            temperature + plugin.getConfigManager().getFuelIgnitionBoost(mat));
+                }
+            } else {
+                this.activeFuelType2 = null;
+            }
+        }
+
+        // Decrement burning fuel ticks
+        boolean anyFuelBurning = false;
         if (fuelTicksRemaining > 0) {
-            fuelTicksRemaining--;
+            fuelTicksRemaining = Math.max(0, fuelTicksRemaining - elapsedTicks);
+            anyFuelBurning = true;
+        } else {
+            activeFuelType1 = null;
+        }
+        if (fuelTicksRemaining2 > 0) {
+            fuelTicksRemaining2 = Math.max(0, fuelTicksRemaining2 - elapsedTicks);
+            anyFuelBurning = true;
+        } else {
+            activeFuelType2 = null;
+        }
+
+        if (anyFuelBurning) {
             if (temperature < currentLimit) {
                 temperature = Math.min(temperature + finalRise, currentLimit);
             } else if (temperature > currentLimit) {
-                // Nhiệt độ cao hơn giới hạn nhiên liệu -> nguội về giới hạn
                 temperature = Math.max(currentLimit, temperature - finalFall);
             }
         } else {
@@ -351,8 +580,19 @@ public abstract class Machine {
     }
 
     private void processRecipe() {
-        if (state != MachineState.WORKING || currentRecipe == null)
+        if (currentRecipe == null)
             return;
+
+        if ((currentRecipe.requiresColdQuench() && !hasColdQuenchEnvironment())
+                || (currentRecipe.requiresSoulFire() && !hasSoulFireEnvironment())) {
+            pause();
+            return;
+        }
+
+        if (state == MachineState.PAUSED && temperature >= currentRecipe.getMinTemperature()) {
+            resume();
+        }
+        if (state != MachineState.WORKING) return;
 
         // Kiểm tra nhiệt độ tối thiểu
         if (temperature < currentRecipe.getMinTemperature()) {
@@ -396,21 +636,42 @@ public abstract class Machine {
             return;
         }
 
-        progressTicks++;
+        int elapsed = Math.min(totalTicks - progressTicks,
+                Math.max(1, plugin.getConfigManager().getTickRate()));
+        progressTicks += elapsed;
+        processTemperatureTotal += (long) temperature * elapsed;
+        processTemperatureTicks += elapsed;
 
         if (progressTicks >= totalTicks) {
-            // Kiểm tra tỉ lệ luyện kim thất bại (chỉ khi được bật cấu hình và recipe có tỷ lệ thất bại)
-            if (plugin.getConfigManager().isFailEnabled() && currentRecipe.getFailChance() > 0.0) {
-                double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
-                if (rand < currentRecipe.getFailChance()) {
-                    ruinRecipe("\u00a7c\u26a0 Luy\u1ec7n kim th\u1ea5t b\u1ea1i! Ch\u1ec9 thu \u0111\u01b0\u1ee3c s\u1ec9 kim lo\u1ea1i.", "\u00a7c\u26a0 Luy\u1ec7n kim th\u1ea5t b\u1ea1i!");
-                    return;
+            // Kiểm tra tỉ lệ luyện kim thất bại (chỉ khi được bật cấu hình)
+            if (plugin.getConfigManager().isFailEnabled()) {
+                int averageTemperature = getAverageProcessTemperature();
+                double finalFailChance = calculateFinalFailChance(currentRecipe, averageTemperature);
+                if (finalFailChance > 0.0) {
+                    double rand = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+                    if (rand < finalFailChance) {
+                        String reason = averageTemperature < currentRecipe.getPurificationTemperature()
+                                ? "\u00a7cNhi\u1ec7t tinh luy\u1ec7n kh\u00f4ng \u0111\u1ee7, t\u1ea1p ch\u1ea5t k\u1ebft th\u00e0nh s\u1ec9."
+                                : "\u00a7cLuy\u1ec7n kim th\u1ea5t b\u1ea1i, ch\u1ec9 thu \u0111\u01b0\u1ee3c s\u1ec9 kim lo\u1ea1i.";
+                        ruinRecipe("\u00a7c\u26a0 " + reason, "\u00a7c\u26a0 Luy\u1ec7n kim th\u1ea5t b\u1ea1i!");
+                        return;
+                    }
                 }
             }
 
             onRecipeComplete(currentRecipe);
             reset();
         }
+    }
+
+    private double calculateFinalFailChance(MetallurgyRecipe recipe, int averageTemperature) {
+        double temperatureFailChance = recipe.getTemperatureFailChance(averageTemperature);
+        if (hasAdditive) {
+            return Math.max(0.0, temperatureFailChance - getActiveAdditiveCleanOutputBonus());
+        }
+        double additivePenalty = plugin.getConfigManager().getNoAdditiveFailChance();
+        return Math.min(1.0,
+                1.0 - (1.0 - temperatureFailChance) * (1.0 - additivePenalty));
     }
 
     private void ruinRecipe(String chatMessage, String actionBarMessage) {
@@ -446,7 +707,12 @@ public abstract class Machine {
         if (existing == null || existing.getType() == Material.AIR) {
             inventory.setItem(slagSlot, slag);
         } else if (existing.isSimilar(slag)) {
-            existing.setAmount(Math.min(existing.getAmount() + 1, existing.getMaxStackSize()));
+            int space = existing.getMaxStackSize() - existing.getAmount();
+            if (space > 0) {
+                existing.setAmount(existing.getAmount() + 1);
+            } else if (location.getWorld() != null) {
+                location.getWorld().dropItemNaturally(location.clone().add(0.5, 1.2, 0.5), slag);
+            }
         } else {
             if (location.getWorld() != null) {
                 location.getWorld().dropItemNaturally(location.clone().add(0.5, 1.2, 0.5), slag);

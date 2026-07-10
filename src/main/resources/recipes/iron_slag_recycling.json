@@ -1,0 +1,22 @@
+{
+  "_schema_version": 4,
+  "id": "ancient_forge/iron_slag_recycling",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "custom_item": "iron_slag", "amount": 4 }
+  ],
+  "output": {
+    "material": "IRON_INGOT",
+    "amount": 1
+  },
+  "fuel_cost": 400,
+  "time_seconds": 20,
+  "min_temperature": 1200,
+  "purification_temperature": 1600,
+  "max_temperature": 1800,
+  "fail_chance": 0.25,
+  "underheat_fail_chance": 0.95,
+  "additives": ["FLINT", "QUARTZ"],
+  "additive_amount": 1,
+  "additive_clean_output_bonus": 0.25
+}

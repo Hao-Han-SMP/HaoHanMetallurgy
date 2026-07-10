@@ -1,0 +1,23 @@
+{
+  "_schema_version": 4,
+  "id": "ancient_forge/mithril_slag_recycling",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "custom_item": "mithril_slag", "amount": 4 }
+  ],
+  "output": {
+    "custom_item": "mithril_ingot",
+    "amount": 1
+  },
+  "fuel_cost": 400,
+  "time_seconds": 20,
+  "min_temperature": 1400,
+  "purification_temperature": 1650,
+  "max_temperature": 1850,
+  "fail_chance": 0.25,
+  "underheat_fail_chance": 0.95,
+  "additives": ["QUARTZ", "GLOWSTONE_DUST"],
+  "additive_amount": 2,
+  "additive_clean_output_bonus": 0.25,
+  "requires_cold_quench": true
+}

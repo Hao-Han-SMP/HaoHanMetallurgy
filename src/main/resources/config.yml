@@ -3,6 +3,8 @@
 # Mọi giá trị gameplay đều ở đây. Không hardcode trong code.
 # ============================================================
 
+config-version: 4
+
 # ── Debug ────────────────────────────────────────────────────
 debug: false
 
@@ -14,6 +16,8 @@ tick-rate: 20
 machines:
   # Khoảng cách tối đa để player mở GUI máy (blocks)
   interaction-range: 5
+  # Hệ số nhân tốc độ tiến trình nấu recipe (ví dụ: 1.0 = tốc độ thực tế của recipe, 5.0 = nhanh gấp 5 lần)
+  time-speed-multiplier: 1.0
 
 # ── GUI ───────────────────────────────────────────────────────
 gui:
@@ -24,23 +28,52 @@ gui:
     prefix: "\uE100"
     glyph: "\uE101"
     font: "haohansmp:gui"
-  # Slot layout: xem GuiManager để hiểu ý nghĩa từng slot
-  fuel-slot: 3
-  input-slot-1: 11
-  input-slot-2: 12
-  output-slot: 15
+  # Slot layout: xem GuiManager hoặc ForgeGui để biết ý nghĩa từng slot
+  fuel-slot: 3          # Ô nhiên liệu 1
+  fuel-slot-2: 2        # Ô nhiên liệu 2 (mới)
+  input-slot-1: 11      # Ô nguyên liệu 1
+  input-slot-2: 12      # Ô nguyên liệu 2
+  additive-slot: 10     # Ô phụ phẩm / chất trợ dung (mới)
+  output-slot: 16       # Ô thành phẩm kim loại sạch
+  slag-slot: 15         # Ô sỉ kim loại (slag)
   progress-slot: 13
   temperature-slot: 4
 
+
+# Ngoài fuel vanilla, lò nhận thêm thực vật tươi, len/bed và vật phẩm lửa Nether.
+# Các mục dưới đây override thời gian cháy; fuel không phân nhóm dùng fuel-defaults.
+fuel-defaults:
+  burn-ticks: 200
+  temperature-limit: 300
+
+fuel-groups:
+  fresh-plant:
+    burn-ticks: 3600       # ~3 phút
+    temperature-limit: 150
+  wool:
+    burn-ticks: 200        # ~10 giây
+    temperature-limit: 200
+  wood:
+    burn-ticks: 600        # ~30 giây
+    temperature-limit: 400
+  carbon:
+    burn-ticks: 1500       # ~75 giây
+    temperature-limit: 800
+  lava:
+    burn-ticks: 20000      # ~1000 giây
+    temperature-limit: 1100
+  nether-fire:
+    burn-ticks: 300
+    temperature-limit: 1450
+
 # ── Fuel values (ticks mỗi đơn vị nhiên liệu) ─────────────────
-# Format: MATERIAL_NAME: ticks
 fuel-values:
-  COAL: 800
-  CHARCOAL: 800
-  COAL_BLOCK: 7200
-  BLAZE_ROD: 2400
+  COAL_BLOCK: 12000
+  MAGMA_BLOCK: 600
+  FIRE_CHARGE: 100
+  BLAZE_POWDER: 200
+  BLAZE_ROD: 400
   LAVA_BUCKET: 20000
-  DRIED_KELP_BLOCK: 4000
 
 temperature:
   # Nhiệt độ tăng bao nhiêu mỗi tick khi có fuel (8 = ~160°C/giây → đạt 800°C trong ~5 giây)
@@ -48,16 +81,40 @@ temperature:
   # Nhiệt độ giảm bao nhiêu mỗi tick khi hết fuel
   fall-per-tick: 1
   # Nhiệt độ tối đa (°C)
-  max: 2000
+  max: 2100
+  # Tổ hợp không khai báo riêng nhận thêm một lượng nhiệt nhỏ từ buồng đốt thứ hai.
+  combination-bonus: 75
 
   # Cấp độ giới hạn nhiệt độ tối đa theo loại nhiên liệu sử dụng
   fuel-limits:
-    "DRIED_KELP_BLOCK": 900
-    "CHARCOAL": 1050
-    "COAL": 1200
-    "COAL_BLOCK": 1400
-    "LAVA_BUCKET": 1600
-    "BLAZE_ROD": 1800
+    "COAL_BLOCK": 900
+    "MAGMA_BLOCK": 1300
+    "FIRE_CHARGE": 1400
+    "BLAZE_POWDER": 1500
+    "BLAZE_ROD": 1600
+    "LAVA_BUCKET": 1100
+
+  # Xung nhiệt ngay khi vật phẩm lửa Nether được tiêu hao.
+  ignition-boosts:
+    "MAGMA_BLOCK": 300
+    "FIRE_CHARGE": 700
+    "BLAZE_POWDER": 800
+    "BLAZE_ROD": 900
+
+  # Tổ hợp các nhiên liệu đốt cùng lúc tạo dải nhiệt độ trần khác nhau
+  # Format: "FUEL_A+FUEL_B": limit
+  # Thứ tự sắp xếp alphabetically. Ví dụ COAL+CHARCOAL thay vì CHARCOAL+COAL.
+  fuel-combinations:
+    "CHARCOAL+CHARCOAL": 950
+    "COAL+CHARCOAL": 975
+    "COAL+COAL": 1000
+    "COAL_BLOCK+COAL_BLOCK": 1100
+    "COAL+BLAZE_POWDER": 1300
+    "COAL+BLAZE_ROD": 1400
+    "MAGMA_BLOCK+BLAZE_ROD": 1700
+    "BLAZE_POWDER+BLAZE_ROD": 1750
+    "LAVA_BUCKET+BLAZE_ROD": 1800
+    "BLAZE_ROD+BLAZE_ROD": 2050
 
   # Các chất làm mát chủ động và nhiệt độ hạ đi tương ứng
   coolants:
@@ -66,6 +123,21 @@ temperature:
     "PACKED_ICE": 200
     "BLUE_ICE": 300
     "WATER_BUCKET": 400
+
+# ── Phụ phẩm / Chất trợ dung (Additives / Flux) ───────────────
+additives:
+  # Danh sách phụ phẩm mặc định dùng cho các công thức cơ bản
+  default-list:
+    - "BONE_MEAL"
+    - "SAND"
+    - "RED_SAND"
+    - "CLAY_BALL"
+    - "FLINT"
+  # Tỷ lệ thất bại (ra sỉ) khi không có phụ phẩm phù hợp hỗ trợ
+  no-additive-fail-chance: 0.55
+  # Điểm phần trăm được cộng thẳng vào xác suất ra quặng sạch khi có trợ dung.
+  default-clean-output-bonus: 0.20
+
 
 # ── Progression ───────────────────────────────────────────────
 progression:
@@ -78,16 +150,9 @@ progression:
     # Mặc định dùng EMERALD_ORE làm Mithril Ore (quặng mới)
     mithril-ore: "EMERALD_ORE"
   
-  # Cấp độ công cụ tối thiểu để đào quặng thành công (không bị mất drop):
-  # 1: Wooden Pickaxe
-  # 2: Stone Pickaxe / Gold Pickaxe
-  # 3: Copper Slag Pickaxe
-  # 4: Copper Pickaxe
-  # 5: Iron Slag Pickaxe
-  # 6: Iron Pickaxe
-  # 7: Diamond Pickaxe
-  # 8: Mithril Pickaxe (New Ore Pickaxe)
-  # 9: Netherite Pickaxe
+  # Chuỗi cúp: Iron < EmberSteel < Diamond < Mithril < SoulSteel < Netherite.
+  # 1: Wooden, 2: Stone/Gold, 3: Copper, 4: Iron, 5: EmberSteel,
+  # 6: Diamond, 7: Mithril, 8: SoulSteel, 9: Netherite.
   mining-requirements:
     "minecraft:stone": 1
     "minecraft:coal_ore": 1
@@ -95,21 +160,26 @@ progression:
     "minecraft:copper_ore": 2
     "minecraft:deepslate_copper_ore": 2
     "minecraft:raw_copper_block": 2
-    "minecraft:iron_ore": 4
-    "minecraft:deepslate_iron_ore": 4
-    "minecraft:raw_iron_block": 4
-    "minecraft:diamond_ore": 6
-    "minecraft:deepslate_diamond_ore": 6
-    "mithril-ore": 7
+    "minecraft:iron_ore": 2
+    "minecraft:deepslate_iron_ore": 2
+    "minecraft:raw_iron_block": 2
+    "ember_ore": 4
+    "minecraft:diamond_ore": 5
+    "minecraft:deepslate_diamond_ore": 5
+    "mithril-ore": 6
+    "soul_ore": 6
+    "minecraft:obsidian": 7
+    "minecraft:crying_obsidian": 7
     "minecraft:ancient_debris": 8
+    "minecraft:netherite_block": 8
   # Tier cua tool vanilla. Plugin dung bang nay de kiem tra progression dao quang.
   vanilla-tool-tiers:
     WOODEN_PICKAXE: 1
     STONE_PICKAXE: 2
     GOLDEN_PICKAXE: 2
     COPPER_PICKAXE: 4
-    IRON_PICKAXE: 6
-    DIAMOND_PICKAXE: 7
+    IRON_PICKAXE: 4
+    DIAMOND_PICKAXE: 6
     NETHERITE_PICKAXE: 9
 
   # Thong so cho item plugin. Item van co the dung texture/model vanilla,
@@ -123,14 +193,14 @@ progression:
       mining-efficiency: 1.5
       block-break-speed: 0.0
     copper_pickaxe:
-      tier: 4
+      tier: 3
       max-damage: 165
       attack-damage: 2.0
       attack-speed: -2.8
       mining-efficiency: 2.5
       block-break-speed: 0.0
     iron_slag_pickaxe:
-      tier: 5
+      tier: 3
       max-damage: 190
       attack-damage: 3.0
       attack-speed: -2.8
@@ -144,14 +214,14 @@ progression:
       mining-efficiency: 8.0
       block-break-speed: 0.0
     embersteel_slag_pickaxe:
-      tier: 3
+      tier: 4
       max-damage: 120
       attack-damage: 2.0
       attack-speed: -2.8
       mining-efficiency: 2.0
       block-break-speed: 0.0
     embersteel_pickaxe:
-      tier: 4
+      tier: 5
       max-damage: 210
       attack-damage: 3.0
       attack-speed: -2.8
@@ -172,21 +242,21 @@ progression:
       mining-efficiency: 6.0
       block-break-speed: 0.0
     netherite_slag_pickaxe:
-      tier: 8
+      tier: 7
       max-damage: 1200
       attack-damage: 3.0
       attack-speed: -2.8
       mining-efficiency: 7.0
       block-break-speed: 0.0
     mithril_pickaxe:
-      tier: 8
+      tier: 7
       max-damage: 1800
       attack-damage: 4.0
       attack-speed: -2.8
       mining-efficiency: 7.0
       block-break-speed: 0.0
     mithril_slag_pickaxe:
-      tier: 7
+      tier: 6
       max-damage: 900
       attack-damage: 3.0
       attack-speed: -2.8
@@ -218,4 +288,3 @@ forge-model:
     x: 0.5
     y: 0.0    # Nâng display lên 0.5 block so với bản trước
     z: 0.5
-

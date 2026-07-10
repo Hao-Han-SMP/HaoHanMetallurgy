@@ -1,0 +1,22 @@
+{
+  "_schema_version": 4,
+  "id": "ancient_forge/netherite_slag_recycling",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "custom_item": "netherite_slag", "amount": 4 }
+  ],
+  "output": {
+    "material": "NETHERITE_SCRAP",
+    "amount": 1
+  },
+  "fuel_cost": 600,
+  "time_seconds": 30,
+  "min_temperature": 1650,
+  "purification_temperature": 1900,
+  "max_temperature": 2000,
+  "fail_chance": 0.35,
+  "underheat_fail_chance": 0.98,
+  "additives": ["BLAZE_POWDER"],
+  "additive_amount": 2,
+  "additive_clean_output_bonus": 0.20
+}

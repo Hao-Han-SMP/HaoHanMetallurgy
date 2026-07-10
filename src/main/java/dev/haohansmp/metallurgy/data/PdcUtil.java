@@ -44,13 +44,13 @@ public final class PdcUtil {
         return readPdc(block, pdc -> {
             NamespacedKey key = new NamespacedKey(plugin, KEY_MACHINE_TYPE);
             String value = pdc.get(key, PersistentDataType.STRING);
-            if (value == null) return Optional.<MachineType>empty();
+            if (value == null) return Optional.empty();
             try {
                 return Optional.of(MachineType.valueOf(value));
             } catch (IllegalArgumentException e) {
-                return Optional.<MachineType>empty();
+                return Optional.empty();
             }
-        });
+        }, Optional.empty());
     }
 
     /** Kiểm tra block có phải là máy metallurgy không. */
@@ -77,7 +77,7 @@ public final class PdcUtil {
     public static Optional<String> getString(Plugin plugin, Block block, String keyName) {
         return readPdc(block, pdc ->
             Optional.ofNullable(pdc.get(new NamespacedKey(plugin, keyName), PersistentDataType.STRING))
-        );
+        , Optional.empty());
     }
 
     public static void setInt(Plugin plugin, Block block, String keyName, int value) {
@@ -89,7 +89,7 @@ public final class PdcUtil {
     public static Optional<Integer> getInt(Plugin plugin, Block block, String keyName) {
         return readPdc(block, pdc ->
             Optional.ofNullable(pdc.get(new NamespacedKey(plugin, keyName), PersistentDataType.INTEGER))
-        );
+        , Optional.empty());
     }
 
     // ── Internal ───────────────────────────────────────────────
@@ -110,8 +110,8 @@ public final class PdcUtil {
         ts.update();
     }
 
-    private static <R> R readPdc(Block block, PdcFunction<R> action) {
-        if (!(block.getState() instanceof TileState ts)) return null;
+    private static <R> R readPdc(Block block, PdcFunction<R> action, R defaultValue) {
+        if (!(block.getState() instanceof TileState ts)) return defaultValue;
         return action.apply(ts.getPersistentDataContainer());
     }
 }

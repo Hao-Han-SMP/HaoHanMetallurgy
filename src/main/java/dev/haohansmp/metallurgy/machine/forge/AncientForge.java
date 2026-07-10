@@ -203,27 +203,7 @@ public class AncientForge extends Machine {
         }
 
         // Đặt vật phẩm nung thành công vào ô Output (slot 15) của máy
-        ItemStack existing = inventory.getItem(dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_OUTPUT);
-        if (existing == null || existing.getType() == Material.AIR) {
-            inventory.setItem(dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_OUTPUT, result);
-        } else if (existing.isSimilar(result)) {
-            int newAmount = existing.getAmount() + result.getAmount();
-            if (newAmount <= existing.getMaxStackSize()) {
-                existing.setAmount(newAmount);
-            } else {
-                // Đầy -> Rơi ra ngoài
-                Location dropLoc = getLocation().clone().add(0.5, 1.2, 0.5);
-                if (dropLoc.getWorld() != null) {
-                    dropLoc.getWorld().dropItemNaturally(dropLoc, result);
-                }
-            }
-        } else {
-            // Khác loại vật phẩm -> Rơi ra ngoài làm fallback
-            Location dropLoc = getLocation().clone().add(0.5, 1.2, 0.5);
-            if (dropLoc.getWorld() != null) {
-                dropLoc.getWorld().dropItemNaturally(dropLoc, result);
-            }
-        }
+        addToOutputSlot(dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_OUTPUT, result);
 
         addToSlagOutput(buildMetalSlag(recipe));
 
@@ -233,16 +213,24 @@ public class AncientForge extends Machine {
     }
 
     private void addToSlagOutput(ItemStack result) {
-        int slot = dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_SLAG;
+        addToOutputSlot(dev.haohansmp.metallurgy.gui.forge.ForgeGui.SLOT_SLAG, result);
+    }
+
+    private void addToOutputSlot(int slot, ItemStack result) {
         ItemStack existing = inventory.getItem(slot);
         if (existing == null || existing.getType() == Material.AIR) {
             inventory.setItem(slot, result);
         } else if (existing.isSimilar(result)) {
-            int newAmount = existing.getAmount() + result.getAmount();
-            if (newAmount <= existing.getMaxStackSize()) {
-                existing.setAmount(newAmount);
-            } else {
-                dropOutput(result);
+            int space = existing.getMaxStackSize() - existing.getAmount();
+            int moved = Math.min(space, result.getAmount());
+            if (moved > 0) {
+                existing.setAmount(existing.getAmount() + moved);
+            }
+            int overflow = result.getAmount() - moved;
+            if (overflow > 0) {
+                ItemStack remainder = result.clone();
+                remainder.setAmount(overflow);
+                dropOutput(remainder);
             }
         } else {
             dropOutput(result);

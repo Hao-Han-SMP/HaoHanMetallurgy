@@ -1,0 +1,24 @@
+{
+  "_schema_version": 4,
+  "id": "ancient_forge/soulsteel_ingot",
+  "machine_type": "ANCIENT_FORGE",
+  "inputs": [
+    { "custom_item": "mithril_ingot", "amount": 1 },
+    { "material": "GHAST_TEAR", "amount": 1 }
+  ],
+  "output": {
+    "custom_item": "soulsteel_ingot",
+    "amount": 1
+  },
+  "fuel_cost": 500,
+  "time_seconds": 25,
+  "min_temperature": 1550,
+  "purification_temperature": 1600,
+  "max_temperature": 1750,
+  "fail_chance": 0.15,
+  "underheat_fail_chance": 0.95,
+  "additives": ["SOUL_SAND", "SOUL_SOIL"],
+  "additive_amount": 2,
+  "additive_clean_output_bonus": 0.25,
+  "requires_soul_fire": true
+}

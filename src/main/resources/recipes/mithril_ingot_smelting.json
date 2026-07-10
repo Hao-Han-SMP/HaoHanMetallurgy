@@ -1,8 +1,10 @@
 {
+  "_schema_version": 4,
   "id": "ancient_forge/mithril_ingot",
   "machine_type": "ANCIENT_FORGE",
   "inputs": [
-    { "material": "PRISMARINE_SHARD", "amount": 4 }
+    { "custom_item": "embersteel_ingot", "amount": 1 },
+    { "custom_item": "mithril_shard", "amount": 2 }
   ],
   "output": {
     "custom_item": "mithril_ingot",
@@ -11,6 +13,9 @@
   "fuel_cost": 300,
   "time_seconds": 15,
   "min_temperature": 1350,
+  "purification_temperature": 1400,
   "max_temperature": 1550,
-  "fail_chance": 0.1
+  "fail_chance": 0.10,
+  "underheat_fail_chance": 0.90,
+  "requires_cold_quench": true
 }

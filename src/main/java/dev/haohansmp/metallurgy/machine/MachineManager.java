@@ -178,8 +178,17 @@ public class MachineManager {
             yaml.set(path + ".type", machine.getType().name());
             yaml.set(path + ".location", machine.getLocation());
             yaml.set(path + ".temperature", machine.getTemperature());
-            yaml.set(path + ".fuel", machine.getFuelTicksRemaining());
+            yaml.set(path + ".fuel", machine.getFuelTicksRemaining1());
+            yaml.set(path + ".fuel2", machine.getFuelTicksRemaining2());
+            yaml.set(path + ".active_fuel_type_1", machine.getActiveFuelType1() != null ? machine.getActiveFuelType1().name() : "");
+            yaml.set(path + ".active_fuel_type_2", machine.getActiveFuelType2() != null ? machine.getActiveFuelType2().name() : "");
+            yaml.set(path + ".has_additive", machine.isHasAdditive());
+            yaml.set(path + ".process_temperature_total", machine.getProcessTemperatureTotal());
+            yaml.set(path + ".process_temperature_ticks", machine.getProcessTemperatureTicks());
             yaml.set(path + ".state", machine.getState().name());
+            yaml.set(path + ".recipe", machine.getCurrentRecipe() != null ? machine.getCurrentRecipe().getId() : "");
+            yaml.set(path + ".progress", machine.getProgressTicks());
+            yaml.set(path + ".total", machine.getTotalTicks());
 
             if (machine instanceof dev.haohansmp.metallurgy.machine.forge.AncientForge forge) {
                 yaml.set(path + ".rotation", forge.getRotation());
@@ -255,13 +264,48 @@ public class MachineManager {
 
                 int temp = yaml.getInt(path + ".temperature");
                 int fuel = yaml.getInt(path + ".fuel");
+                int fuel2 = yaml.getInt(path + ".fuel2", 0);
+                String activeFuel1Str = yaml.getString(path + ".active_fuel_type_1", "");
+                String activeFuel2Str = yaml.getString(path + ".active_fuel_type_2", "");
+                boolean hasAdditive = yaml.getBoolean(path + ".has_additive", false);
+                long processTemperatureTotal = yaml.getLong(path + ".process_temperature_total", 0L);
+                int processTemperatureTicks = yaml.getInt(path + ".process_temperature_ticks", 0);
                 String stateStr = yaml.getString(path + ".state", "IDLE");
+                String recipeId = yaml.getString(path + ".recipe", "");
+                int progress = yaml.getInt(path + ".progress", 0);
+                int total = yaml.getInt(path + ".total", 0);
 
                 forge.setTemperature(temp);
                 forge.setFuelTicksRemaining(fuel);
+                forge.setFuelTicksRemaining2(fuel2);
+                forge.setActiveFuelType1(Material.matchMaterial(activeFuel1Str));
+                forge.setActiveFuelType2(Material.matchMaterial(activeFuel2Str));
+                forge.setHasAdditive(hasAdditive);
+                forge.setProcessTemperatureTotal(processTemperatureTotal);
+                forge.setProcessTemperatureTicks(processTemperatureTicks);
+
+                MachineState state = MachineState.IDLE;
                 try {
-                    forge.setState(MachineState.valueOf(stateStr));
+                    state = MachineState.valueOf(stateStr);
                 } catch (Exception e) {}
+
+                if (recipeId != null && !recipeId.isEmpty()) {
+                    var recipeOpt = plugin.getRecipeLoader().getById(recipeId);
+                    if (recipeOpt.isPresent()) {
+                        forge.setCurrentRecipe(recipeOpt.get());
+                        forge.setProgressTicks(progress);
+                        forge.setTotalTicks(total);
+                        forge.setState(state);
+                    } else {
+                        forge.setState(MachineState.IDLE);
+                    }
+                } else {
+                    if (state == MachineState.WORKING || state == MachineState.PAUSED) {
+                        forge.setState(MachineState.IDLE);
+                    } else {
+                        forge.setState(state);
+                    }
+                }
 
                 register(forge);
             }

@@ -116,6 +116,51 @@ Ví dụ tham khảo có sẵn tại:
 src/main/resources/recipes/example_forge.json
 ```
 
+### Nhiệt độ và độ tinh khiết
+
+Mỗi recipe có hai ngưỡng nhiệt khác nhau:
+
+- `min_temperature`: nhiệt tối thiểu để nguyên liệu bắt đầu nóng chảy và recipe chạy.
+- `purification_temperature`: nhiệt cần để loại tạp chất ổn định.
+- `underheat_fail_chance`: tỷ lệ ra sỉ tại đúng ngưỡng nóng chảy.
+- `fail_chance`: tỷ lệ ra sỉ cơ bản khi đạt nhiệt tinh luyện.
+
+Trong khoảng từ `min_temperature` đến `purification_temperature`, tỷ lệ ra sỉ giảm tuyến tính theo nhiệt trung bình của toàn bộ mẻ. `max_temperature` vẫn là ngưỡng quá nhiệt làm hỏng mẻ.
+
+Recipe đặc biệt có thể khai báo phụ gia bắt buộc:
+
+```json
+"additives": ["QUARTZ", "GLOWSTONE_DUST"],
+"additive_amount": 2,
+"additive_clean_output_bonus": 0.25
+```
+
+Chỉ cần một loại trong danh sách, nhưng phải đủ số lượng. `additive_clean_output_bonus: 0.25` cộng 25 điểm phần trăm vào xác suất ra quặng sạch. Recipe không khai báo bonus dùng `additives.default-clean-output-bonus` trong `config.yml`.
+
+Điều kiện môi trường của hợp kim đặc biệt:
+
+```json
+"requires_cold_quench": true,
+"requires_soul_fire": true
+```
+
+Quench lạnh chấp nhận biome lạnh hoặc Ice/Packed Ice/Blue Ice gần lò. Soul Fire chấp nhận Soul Fire, Soul Campfire hoặc Soul Lantern trong bán kính hai block quanh lò.
+
+Lò nhận fuel vanilla cùng các nhóm bổ sung như thực vật tươi, len/bed và vật phẩm lửa Nether. `fuel-values`, `fuel-groups`, `temperature.fuel-limits` và `temperature.ignition-boosts` điều khiển thời gian cháy, trần nhiệt và xung nhiệt ban đầu.
+
+### Tiến trình hợp kim
+
+| Tier | Hợp kim | Nguyên liệu chính | Điều kiện |
+| --- | --- | --- | --- |
+| 0 | Copper | Raw Copper | 700–800°C |
+| 1 | Iron | Raw Iron | 900–1000°C |
+| 2 | EmberSteel | 2 Iron + Blaze Powder; Coal ở FLUX | 1200–1300°C |
+| 3 | Mithril | EmberSteel + Mithril Shard | 1400°C và quench lạnh |
+| 4 | SoulSteel | Mithril + Ghast Tear; Soul Sand/Soil ở FLUX | 1600°C và Soul Fire |
+| 5 | Netherite | SoulSteel + Netherite Scrap; Gold ở FLUX | 2000°C |
+
+Khi nâng từ cấu hình cũ lên `config-version: 4`, plugin tạo `config.before-v4.yml` rồi cập nhật các section cân bằng nhiệt. Recipe mặc định theo schema cũ cũng được backup thành `*.json.before-v4.bak` trước khi thay thế; recipe tùy chỉnh có tên khác không bị sửa.
+
 ## Ghi chú vận hành
 
 - Luôn cài plugin, datapack và resource pack cùng nhau để tránh thiếu recipe, texture hoặc dữ liệu progression.

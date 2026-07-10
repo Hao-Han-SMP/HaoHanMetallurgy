@@ -8,6 +8,7 @@ import dev.haohansmp.metallurgy.recipe.MetallurgyRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -24,12 +25,12 @@ import java.util.Set;
  *
  * <pre>
  *  [BG][BG][BG][FL][TP][BG][BG][BG][BG]   (0–8)
- *  [BG][BG][I1][I2][PR][BG][OT][SL][BG]   (9–17)
+ *  [BG][BG][I1][I2][PR][BG][SL][OT][BG]   (9–17)
  *  [BG][BG][BG][BG][BG][BG][BG][BG][BG]   (18–26)
  * </pre>
  *
  * FL=Fuel(3) TP=Temperature(4) I1=Input1(11) I2=Input2(12)
- * PR=Progress(13) OT=Ingot output(15) SL=Slag output(16)
+ * PR=Progress(13) SL=Slag output(15) OT=Ingot output(16)
  *
  * Fixes:
  * - Real-time refresh mỗi 10 ticks (0.5s) qua startRefreshTask()
@@ -41,8 +42,10 @@ import java.util.Set;
 public class ForgeGui extends MetallurgyGui {
 
     // ── Slot constants ────────────────────────────────────────
+    public static final int SLOT_FUEL_2   = 2;
     public static final int SLOT_FUEL     = 3;
     public static final int SLOT_TEMP     = 4;
+    public static final int SLOT_ADDITIVE = 10;
     public static final int SLOT_INPUT_1  = 11;
     public static final int SLOT_INPUT_2  = 12;
     public static final int SLOT_PROGRESS = 13;
@@ -54,7 +57,7 @@ public class ForgeGui extends MetallurgyGui {
      * Không đặt bất kỳ display item nào ở đây!
      */
     public static final Set<Integer> INTERACTIVE = Set.of(
-        SLOT_FUEL, SLOT_INPUT_1, SLOT_INPUT_2, SLOT_OUTPUT, SLOT_SLAG
+        SLOT_FUEL, SLOT_FUEL_2, SLOT_INPUT_1, SLOT_INPUT_2, SLOT_ADDITIVE, SLOT_OUTPUT, SLOT_SLAG
     );
 
     /** Slots chỉ hiển thị — cancel mọi click. */
@@ -106,7 +109,11 @@ public class ForgeGui extends MetallurgyGui {
         // ── Temperature ──────────────────────────────────────
         int temp    = forge.getTemperature();
         int maxTemp = plugin.getConfigManager().getTempMax();
-        int fuel    = forge.getFuelTicksRemaining();
+        int fuel1   = forge.getFuelTicksRemaining1();
+        int fuel2   = forge.getFuelTicksRemaining2();
+        int fuelLimit = plugin.getConfigManager().getCombinedFuelLimit(
+                fuel1 > 0 ? forge.getActiveFuelType1() : null,
+                fuel2 > 0 ? forge.getActiveFuelType2() : null);
 
         Material tempMat = temp < 400  ? Material.BLUE_STAINED_GLASS_PANE
                          : temp < 1000 ? Material.YELLOW_STAINED_GLASS_PANE
@@ -118,8 +125,9 @@ public class ForgeGui extends MetallurgyGui {
 
         inventory.setItem(SLOT_TEMP, makeDisplay(tempMat,
             "§c🌡 Nhiệt độ: " + tempStatus + " §7(" + temp + "§7/§f" + maxTemp + "°C)",
-            "§7Nhiên liệu còn: §f" + formatTicks(fuel),
-            "§8Đặt nhiên liệu vào ô phía trên để tăng nhiệt."
+            "§7Buồng 1: " + formatFuel(forge.getActiveFuelType1(), fuel1),
+            "§7Buồng 2: " + formatFuel(forge.getActiveFuelType2(), fuel2),
+            "§7Giới hạn tổ hợp: §f" + fuelLimit + "°C"
         ));
 
         // ── Progress ─────────────────────────────────────────
@@ -129,7 +137,7 @@ public class ForgeGui extends MetallurgyGui {
 
         String stateTxt = switch (state) {
             case WORKING -> "§aĐANG CHẠY";
-            case PAUSED  -> "§eTẠM DỪNG §7(nhiệt thấp)";
+            case PAUSED  -> getPauseStatus(recipe);
             case ERROR   -> "§cLỖI";
             case IDLE    -> "§7Chờ nguyên liệu...";
         };
@@ -139,8 +147,27 @@ public class ForgeGui extends MetallurgyGui {
         if (recipe != null) {
             lore.add("§7Công thức: §e" + recipe.getId());
             lore.add("§7" + buildBar(pct, 16) + " §f" + (int)(pct * 100) + "%");
-            int remaining = (int)((1f - pct) * recipe.getTimeSeconds());
+            int remaining = (int) Math.ceil((forge.getTotalTicks() - forge.getProgressTicks()) / 20.0);
             lore.add("§7Còn lại: §f~" + remaining + "s");
+            int averageTemperature = forge.getAverageProcessTemperature();
+            int purificationTemperature = recipe.getPurificationTemperature();
+            lore.add("§7Nhiệt trung bình: §f" + averageTemperature + "°C");
+            lore.add("§7Nhiệt tinh luyện: §f" + purificationTemperature + "°C");
+            lore.add(averageTemperature >= purificationTemperature
+                    ? "§7Độ tinh khiết: §aĐạt chuẩn"
+                    : "§7Độ tinh khiết: §cNhiều tạp chất → dễ ra sỉ");
+            if (recipe.requiresColdQuench()) {
+                lore.add("§7Quench lạnh: " + (forge.hasColdQuenchEnvironment() ? "§aSẵn sàng" : "§cCòn thiếu"));
+            }
+            if (recipe.requiresSoulFire()) {
+                lore.add("§7Soul Fire: " + (forge.hasSoulFireEnvironment() ? "§aĐang cộng hưởng" : "§cCòn thiếu"));
+            }
+            lore.add(forge.isHasAdditive()
+                    ? "§7Trợ dung: §a+" + (int) Math.round(forge.getActiveAdditiveCleanOutputBonus() * 100)
+                            + "% quặng sạch"
+                    : "§7Trợ dung: §cKhông có §8(rủi ro sỉ cao)");
+            lore.add("§7Ước tính quặng sạch: §f"
+                    + (int) Math.round(forge.getEstimatedCleanOutputChance() * 100) + "%");
         } else {
             lore.add("§7Đặt nguyên liệu tương ứng vào các ô IN.");
         }
@@ -211,6 +238,30 @@ public class ForgeGui extends MetallurgyGui {
         }
 
         // Interactive slot — cho phép tương tác để đặt/lấy item
+        if (raw == SLOT_OUTPUT || raw == SLOT_SLAG) {
+            event.setCancelled(!isOutputExtraction(action));
+            return;
+        }
+
+        if (event.getClick() == ClickType.NUMBER_KEY || event.getClick() == ClickType.SWAP_OFFHAND) {
+            event.setCancelled(true);
+            return;
+        }
+
+        ItemStack cursor = event.getCursor();
+        if (cursor != null && cursor.getType() != Material.AIR) {
+            if ((raw == SLOT_FUEL || raw == SLOT_FUEL_2)
+                    && !plugin.getConfigManager().isFuel(cursor.getType())
+                    && !plugin.getConfigManager().getCoolants().containsKey(cursor.getType())) {
+                event.setCancelled(true);
+                return;
+            }
+            if (raw == SLOT_ADDITIVE && !isKnownAdditive(cursor.getType())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         event.setCancelled(false);
 
         // Schedule logic kiểm tra recipe và fuel sau 1 tick (chờ item được đặt vào slot)
@@ -225,7 +276,12 @@ public class ForgeGui extends MetallurgyGui {
     // ── Internal logic ─────────────────────────────────────────
 
     private void handleFuelDeposit() {
-        ItemStack fuelItem = inventory.getItem(SLOT_FUEL);
+        handleFuelSlotDeposit(SLOT_FUEL);
+        handleFuelSlotDeposit(SLOT_FUEL_2);
+    }
+
+    private void handleFuelSlotDeposit(int slot) {
+        ItemStack fuelItem = inventory.getItem(slot);
         if (fuelItem == null || fuelItem.getType() == Material.AIR) return;
 
         Material mat = fuelItem.getType();
@@ -236,15 +292,17 @@ public class ForgeGui extends MetallurgyGui {
             int coolAmount = coolants.get(mat);
             
             // Hạ nhiệt độ lò rèn
-            forge.coolDown(coolAmount * fuelItem.getAmount());
+            forge.coolDown(coolAmount);
 
-            // Tiêu thụ vật phẩm làm mát
+            // Mỗi thao tác chỉ dùng một đơn vị coolant, tránh xóa cả stack.
             if (mat == Material.WATER_BUCKET) {
-                inventory.setItem(SLOT_FUEL, new ItemStack(Material.BUCKET, 1));
+                inventory.setItem(slot, new ItemStack(Material.BUCKET, 1));
+            } else if (fuelItem.getAmount() > 1) {
+                fuelItem.setAmount(fuelItem.getAmount() - 1);
+                inventory.setItem(slot, fuelItem);
             } else {
-                inventory.setItem(SLOT_FUEL, null);
+                inventory.setItem(slot, null);
             }
-            return;
         }
     }
 
@@ -254,12 +312,33 @@ public class ForgeGui extends MetallurgyGui {
         ItemStack item1 = inventory.getItem(SLOT_INPUT_1);
         ItemStack item2 = inventory.getItem(SLOT_INPUT_2);
 
-        if (item1 == null || item1.getType() == Material.AIR) return;
+        boolean item1Empty = item1 == null || item1.getType() == Material.AIR;
+        boolean item2Empty = item2 == null || item2.getType() == Material.AIR;
+        if (item1Empty && item2Empty) return;
 
         Optional<MetallurgyRecipe> match = findRecipe(item1, item2);
         if (match.isEmpty()) return;
 
         MetallurgyRecipe recipe = match.get();
+
+        if (recipe.requiresColdQuench() && !forge.hasColdQuenchEnvironment()) {
+            player.sendMessage("§8[§6Forge§8] §cMithril cần quench lạnh: đặt Ice/Packed Ice/Blue Ice"
+                    + " gần lò hoặc xây lò trong biome lạnh.");
+            return;
+        }
+        if (recipe.requiresSoulFire() && !forge.hasSoulFireEnvironment()) {
+            player.sendMessage("§8[§6Forge§8] §cCông thức này cần Soul Fire hoặc Soul Campfire gần lò.");
+            return;
+        }
+
+        if (!forge.hasRequiredAdditive(recipe)) {
+            String accepted = recipe.getRequiredAdditives().stream()
+                    .map(Material::name)
+                    .collect(java.util.stream.Collectors.joining(" hoặc "));
+            player.sendMessage("§8[§6Forge§8] §cCông thức này bắt buộc cần trợ dung §e"
+                    + accepted + " x" + recipe.getAdditiveAmount() + "§c ở ô FLUX.");
+            return;
+        }
 
         // Kiểm tra Advancement yêu cầu
         String reqAdv = recipe.getRequiredAdvancement();
@@ -277,16 +356,12 @@ public class ForgeGui extends MetallurgyGui {
         }
 
         if (!forge.startRecipe(recipe)) {
-            player.sendMessage("§8[§6Forge§8] §cCần §e" + recipe.getMinTemperature()
-                + "°C§c, hiện: §e" + forge.getTemperature() + "°C");
+            player.sendMessage("§8[§6Forge§8] §cChưa đủ nhiệt nóng chảy. Cần §e" + recipe.getMinTemperature()
+                + "°C§c, hiện tại: §e" + forge.getTemperature() + "°C");
             return;
         }
 
-        // Consume inputs
-        consumeInput(SLOT_INPUT_1, recipe.getInputs().get(0).amount());
-        if (recipe.getInputs().size() > 1) {
-            consumeInput(SLOT_INPUT_2, recipe.getInputs().get(1).amount());
-        }
+        consumeMatchedInputs(recipe, item1, item2);
         player.sendMessage("§8[§6Forge§8] §aRecipe bắt đầu: §e" + recipe.getId());
     }
 
@@ -300,11 +375,20 @@ public class ForgeGui extends MetallurgyGui {
 
     private boolean matchesInputs(MetallurgyRecipe r, ItemStack i1, ItemStack i2) {
         var ins = r.getInputs();
-        if (ins.isEmpty()) return false;
-        if (!ins.get(0).matches(i1.getType(), i1.getAmount())) return false;
-        if (ins.size() == 1) return true;
-        if (i2 == null || i2.getType() == Material.AIR) return false;
-        return ins.get(1).matches(i2.getType(), i2.getAmount());
+        if (ins.isEmpty() || ins.size() > 2) return false;
+
+        boolean i1Empty = i1 == null || i1.getType() == Material.AIR;
+        boolean i2Empty = i2 == null || i2.getType() == Material.AIR;
+
+        if (ins.size() == 1) {
+            return (ins.get(0).matches(i1) && i2Empty)
+                    || (ins.get(0).matches(i2) && i1Empty);
+        } else { // ins.size() == 2
+            if (i1Empty || i2Empty) return false;
+            boolean order1 = ins.get(0).matches(i1) && ins.get(1).matches(i2);
+            boolean order2 = ins.get(0).matches(i2) && ins.get(1).matches(i1);
+            return order1 || order2;
+        }
     }
 
     private void consumeInput(int slot, int amount) {
@@ -317,6 +401,37 @@ public class ForgeGui extends MetallurgyGui {
             item.setAmount(left);
             inventory.setItem(slot, item);
         }
+    }
+
+    private void consumeMatchedInputs(MetallurgyRecipe recipe, ItemStack item1, ItemStack item2) {
+        var inputs = recipe.getInputs();
+        if (inputs.size() == 1) {
+            int slot = inputs.get(0).matches(item1) ? SLOT_INPUT_1 : SLOT_INPUT_2;
+            consumeInput(slot, inputs.get(0).amount());
+            return;
+        }
+
+        if (inputs.get(0).matches(item1) && inputs.get(1).matches(item2)) {
+            consumeInput(SLOT_INPUT_1, inputs.get(0).amount());
+            consumeInput(SLOT_INPUT_2, inputs.get(1).amount());
+        } else {
+            consumeInput(SLOT_INPUT_1, inputs.get(1).amount());
+            consumeInput(SLOT_INPUT_2, inputs.get(0).amount());
+        }
+    }
+
+    private boolean isKnownAdditive(Material material) {
+        if (plugin.getConfigManager().isDefaultAdditive(material)) return true;
+        return plugin.getRecipeLoader().getForMachine(forge.getType()).stream()
+                .anyMatch(recipe -> recipe.acceptsAdditive(material));
+    }
+
+    private boolean isOutputExtraction(InventoryAction action) {
+        return switch (action) {
+            case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME,
+                    MOVE_TO_OTHER_INVENTORY, DROP_ALL_SLOT, DROP_ONE_SLOT -> true;
+            default -> false;
+        };
     }
 
     // ── Item builder helpers ───────────────────────────────────
@@ -350,5 +465,20 @@ public class ForgeGui extends MetallurgyGui {
         if (ticks <= 0) return "§cHết fuel";
         int s = ticks / 20;
         return s < 60 ? s + "s" : (s / 60) + "m" + (s % 60) + "s";
+    }
+
+    private String formatFuel(Material material, int ticks) {
+        if (material == null || ticks <= 0) return "§cTắt";
+        return "§e" + material.name() + " §7(" + formatTicks(ticks) + "§7)";
+    }
+
+    private String getPauseStatus(MetallurgyRecipe recipe) {
+        if (recipe != null && recipe.requiresColdQuench() && !forge.hasColdQuenchEnvironment()) {
+            return "§eTẠM DỪNG §7(thiếu quench lạnh)";
+        }
+        if (recipe != null && recipe.requiresSoulFire() && !forge.hasSoulFireEnvironment()) {
+            return "§eTẠM DỪNG §7(thiếu Soul Fire)";
+        }
+        return "§eTẠM DỪNG §7(nhiệt thấp)";
     }
 }

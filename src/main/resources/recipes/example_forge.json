@@ -1,18 +1,25 @@
 {
+  "_schema_version": 4,
   "_comment": "Ví dụ recipe: Embersteel Ingot từ Ancient Forge",
   "id": "ancient_forge/embersteel_ingot",
   "machine_type": "ANCIENT_FORGE",
   "inputs": [
-    { "material": "IRON_INGOT", "amount": 4 },
-    { "material": "MAGMA_CREAM", "amount": 2 }
+    { "material": "IRON_INGOT", "amount": 2 },
+    { "material": "BLAZE_POWDER", "amount": 1 }
   ],
   "output": {
     "custom_item": "embersteel_ingot",
-    "amount": 2
+    "amount": 1
   },
   "fuel_cost": 400,
   "time_seconds": 30,
-  "min_temperature": 1450,
-  "max_temperature": 1700,
+  "min_temperature": 1200,
+  "purification_temperature": 1300,
+  "max_temperature": 1450,
+  "fail_chance": 0.15,
+  "underheat_fail_chance": 0.90,
+  "additives": ["COAL", "CHARCOAL"],
+  "additive_amount": 1,
+  "additive_clean_output_bonus": 0.20,
   "required_advancement": "haohansmp:metallurgy/find_ember_ore"
 }

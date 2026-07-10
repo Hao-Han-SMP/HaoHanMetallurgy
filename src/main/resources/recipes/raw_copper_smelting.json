@@ -1,4 +1,5 @@
 {
+  "_schema_version": 4,
   "id": "ancient_forge/copper_ingot",
   "machine_type": "ANCIENT_FORGE",
   "inputs": [
@@ -10,7 +11,9 @@
   },
   "fuel_cost": 100,
   "time_seconds": 10,
-  "min_temperature": 1080,
-  "max_temperature": 1250,
-  "fail_chance": 0.08
+  "min_temperature": 700,
+  "purification_temperature": 800,
+  "max_temperature": 950,
+  "fail_chance": 0.08,
+  "underheat_fail_chance": 0.75
 }

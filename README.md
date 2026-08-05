@@ -166,3 +166,10 @@ Khi nâng từ cấu hình cũ lên `config-version: 4`, plugin tạo `config.be
 - Luôn cài plugin, datapack và resource pack cùng nhau để tránh thiếu recipe, texture hoặc dữ liệu progression.
 - Không nên chỉnh trực tiếp dữ liệu trong thư mục runtime của server nếu thay đổi có thể được quản lý từ mã nguồn.
 - Khi cập nhật datapack hoặc recipe trong môi trường đang chạy, kiểm tra lại bằng `/reload` và `/metallurgy reload`.
+
+## Giấy phép
+
+Copyright (C) 2026 HaoHanSMP.
+
+HaoHan Metallurgy được phát hành theo GNU General Public License phiên bản 3
+hoặc mới hơn (`GPL-3.0-or-later`). Xem [LICENSE](LICENSE) để biết toàn bộ điều khoản.

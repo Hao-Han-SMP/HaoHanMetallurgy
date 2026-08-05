@@ -121,3 +121,10 @@ src/main/resources/recipes/example_forge.json
 - Install the plugin, datapack, and resource pack together to avoid missing recipes, textures, or progression data.
 - Avoid editing runtime server data directly when the change can be managed from source.
 - After updating datapack or recipe files on a running server, verify the changes with `/reload` and `/metallurgy reload`.
+
+## License
+
+Copyright (C) 2026 HaoHanSMP.
+
+HaoHan Metallurgy is licensed under the GNU General Public License version 3 or
+later (`GPL-3.0-or-later`). See [LICENSE](LICENSE) for the full license text.

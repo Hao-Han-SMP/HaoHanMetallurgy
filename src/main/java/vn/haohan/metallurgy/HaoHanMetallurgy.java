@@ -21,7 +21,6 @@ import vn.haohan.metallurgy.listener.VanillaToolListener;
 import vn.haohan.metallurgy.listener.ManagedDisplayProtectionListener;
 import vn.haohan.metallurgy.listener.FurnaceGuideListener;
 import vn.haohan.metallurgy.machine.MachineManager;
-import vn.haohan.metallurgy.ore.CustomOreManager;
 import vn.haohan.metallurgy.progression.ProgressionManager;
 import vn.haohan.metallurgy.recipe.CraftingRecipeManager;
 import vn.haohan.metallurgy.recipe.RecipeLoader;
@@ -50,7 +49,6 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     private CraftingRecipeManager craftingRecipeManager;
     private RecipeLoader recipeLoader;
     private MachineManager machineManager;
-    private CustomOreManager customOreManager;
     private ProgressionManager progressionManager;
     private GuiManager guiManager;
     private TickEngine tickEngine;
@@ -95,7 +93,6 @@ public final class HaoHanMetallurgy extends JavaPlugin {
 
         // 4. Machine Manager
         machineManager = new MachineManager(this);
-        customOreManager = new CustomOreManager(this);
 
         // 5. GUI Manager (cần register listener)
         guiManager = new GuiManager(this);
@@ -143,7 +140,6 @@ public final class HaoHanMetallurgy extends JavaPlugin {
 
         // 8. Restore active machines sau 1 tick để world/chunk state ổn định hơn khi restart.
         getServer().getScheduler().runTask(this, () -> {
-            customOreManager.loadAll();
             machineManager.loadAll();
             pluginLogger.info("Restored delayed machine state. Machines: " + machineManager.count());
         });
@@ -188,7 +184,6 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         if (charcoalKilnListener != null) charcoalKilnListener.shutdown();
         if (furnaceGuideListener != null) furnaceGuideListener.shutdown();
         if (customOreListener != null) customOreListener.cleanupMiningSpeedModifiers();
-        if (customOreManager != null) customOreManager.shutdown();
 
         if (machineManager != null) {
             machineManager.saveAll();
@@ -208,7 +203,6 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     public CraftingRecipeManager getCraftingRecipeManager() { return craftingRecipeManager; }
     public RecipeLoader getRecipeLoader()   { return recipeLoader; }
     public MachineManager getMachineManager() { return machineManager; }
-    public CustomOreManager getCustomOreManager() { return customOreManager; }
     public ProgressionManager getProgressionManager() { return progressionManager; }
     public GuiManager getGuiManager()       { return guiManager; }
     public TickEngine getTickEngine()       { return tickEngine; }

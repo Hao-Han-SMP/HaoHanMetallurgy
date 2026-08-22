@@ -31,7 +31,6 @@ public class ChunkListener implements Listener {
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
         Chunk chunk = event.getChunk();
-        plugin.getCustomOreManager().onChunkUnload(chunk);
         List<Machine> affected = getMachinesInChunk(chunk);
 
         if (affected.isEmpty()) return;
@@ -54,7 +53,6 @@ public class ChunkListener implements Listener {
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         Chunk chunk = event.getChunk();
-        plugin.getCustomOreManager().onChunkLoad(chunk);
         List<Machine> affected = getMachinesInChunk(chunk);
 
         if (affected.isEmpty()) return;

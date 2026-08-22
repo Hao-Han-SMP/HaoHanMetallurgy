@@ -58,6 +58,30 @@ public final class CustomOreBlock {
                 && data.getNote().getId() == noteFor(item);
     }
 
+    public static String blockDataStringFor(CustomItem item) {
+        int note = noteFor(item);
+        if (note <= 0) return null;
+        return "minecraft:note_block[instrument=custom_head,note=" + note + ",powered=false]";
+    }
+
+    public static CustomItem getCustomBlock(Block block) {
+        if (block == null) return null;
+        return getCustomBlock(block.getBlockData());
+    }
+
+    public static CustomItem getCustomBlock(BlockData blockData) {
+        if (!(blockData instanceof NoteBlock data)) return null;
+        if (data.getInstrument() != Instrument.CUSTOM_HEAD) return null;
+        return switch (data.getNote().getId()) {
+            case 20 -> CustomItem.BORAX_ORE;
+            case 21 -> CustomItem.MITHRIL_ORE;
+            case 22 -> CustomItem.DEEPSLATE_BORAX_ORE;
+            case 23 -> CustomItem.DEEPSLATE_MITHRIL_ORE;
+            case 24 -> CustomItem.CHARCOAL_BLOCK;
+            default -> null;
+        };
+    }
+
     private static int noteFor(CustomItem item) {
         if (item == null) return -1;
         return switch (item) {

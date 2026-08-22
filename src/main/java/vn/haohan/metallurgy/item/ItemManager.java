@@ -56,9 +56,6 @@ public class ItemManager {
             if (customItem == CustomItem.BOW_DRILL) {
                 meta.setItemModel(BOW_DRILL_MODEL);
             }
-            if (CustomOreBlock.isManagedBlock(customItem) && meta instanceof BlockDataMeta blockDataMeta) {
-                blockDataMeta.setBlockData(CustomOreBlock.blockDataFor(customItem));
-            }
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, customItem.getId());
             itemStack.setItemMeta(meta);
         }
@@ -85,6 +82,9 @@ public class ItemManager {
                         .color(index == 0 ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false))
                 .toList());
+        if (CustomOreBlock.isManagedBlock(customItem)) {
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        }
     }
 
     private void applyLocalizedPresentation(CustomItem customItem, ItemMeta meta) {
@@ -97,6 +97,9 @@ public class ItemManager {
                         .color(index == 0 ? NamedTextColor.GRAY : NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false))
                 .toList());
+        if (CustomOreBlock.isManagedBlock(customItem)) {
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        }
     }
 
     /**
@@ -140,11 +143,12 @@ public class ItemManager {
 
         boolean correctMaterial = itemStack.getType() == customItem.getMaterial();
         ItemMeta currentMeta = itemStack.getItemMeta();
-        boolean correctBlockState = currentMeta instanceof BlockDataMeta blockDataMeta
-                && blockDataMeta.hasBlockData()
-                && CustomOreBlock.matches(blockDataMeta.getBlockData(Material.NOTE_BLOCK), customItem);
+        boolean hasLegacyBlockData = currentMeta instanceof BlockDataMeta blockDataMeta
+                && blockDataMeta.hasBlockData();
+        boolean missingTooltipHide = CustomOreBlock.isManagedBlock(customItem)
+                && (currentMeta == null || !currentMeta.hasItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
         boolean needsCarrierMigration = CustomOreBlock.isManagedBlock(customItem)
-                && (!correctMaterial || !correctBlockState);
+                && (!correctMaterial || hasLegacyBlockData || missingTooltipHide);
         boolean correctBowDrillModel = currentMeta != null
                 && currentMeta.hasItemModel()
                 && BOW_DRILL_MODEL.equals(currentMeta.getItemModel());

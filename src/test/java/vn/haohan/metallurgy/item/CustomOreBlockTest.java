@@ -31,4 +31,19 @@ class CustomOreBlockTest {
         assertTrue(CustomOreBlock.isManagedBlock(CustomItem.CHARCOAL_BLOCK));
         assertFalse(CustomOreBlock.isOre(CustomItem.CHARCOAL_BLOCK));
     }
+
+    @Test
+    void generatesCorrectCustomBlockDataStrings() {
+        assertEquals("minecraft:note_block[instrument=custom_head,note=20,powered=false]",
+                CustomOreBlock.blockDataStringFor(CustomItem.BORAX_ORE));
+        assertEquals("minecraft:note_block[instrument=custom_head,note=21,powered=false]",
+                CustomOreBlock.blockDataStringFor(CustomItem.MITHRIL_ORE));
+        assertEquals("minecraft:note_block[instrument=custom_head,note=22,powered=false]",
+                CustomOreBlock.blockDataStringFor(CustomItem.DEEPSLATE_BORAX_ORE));
+        assertEquals("minecraft:note_block[instrument=custom_head,note=23,powered=false]",
+                CustomOreBlock.blockDataStringFor(CustomItem.DEEPSLATE_MITHRIL_ORE));
+        assertEquals("minecraft:note_block[instrument=custom_head,note=24,powered=false]",
+                CustomOreBlock.blockDataStringFor(CustomItem.CHARCOAL_BLOCK));
+        assertEquals(null, CustomOreBlock.blockDataStringFor(CustomItem.RAW_BORAX));
+    }
 }

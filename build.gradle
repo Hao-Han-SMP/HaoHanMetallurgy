@@ -27,7 +27,7 @@ repositories {
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
     compileOnly 'vn.haohan:HaoHanDisplayUI:1.0.1'
-    compileOnly files('libs/HaoHanItemCore-1.0.0.jar')
+    compileOnly 'vn.haohan:HaoHanItemCore:1.0.0'
     compileOnly 'com.google.code.gson:gson:2.10.1'
     testImplementation 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
     testImplementation 'com.google.code.gson:gson:2.10.1'

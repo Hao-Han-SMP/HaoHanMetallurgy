@@ -2,6 +2,7 @@ package vn.haohan.metallurgy.listener;
 
 import vn.haohan.metallurgy.HaoHanMetallurgy;
 import vn.haohan.metallurgy.item.CustomItem;
+import vn.haohan.metallurgy.item.CustomOreBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -206,7 +207,7 @@ public final class CharcoalKilnListener implements Listener {
             log.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, smoke, 1, 0.08, 0.04, 0.08, 0.005);
             if (now < entry.getValue().finishAt()) continue;
 
-            plugin.getCustomOreManager().register(log, CustomItem.CHARCOAL_BLOCK);
+            log.setBlockData(CustomOreBlock.blockDataFor(CustomItem.CHARCOAL_BLOCK), false);
             dryMudShell(log);
             log.getWorld().playSound(smoke, Sound.BLOCK_FIRE_EXTINGUISH, 0.9f, 0.75f);
             log.getWorld().spawnParticle(Particle.LARGE_SMOKE, smoke, 10, 0.22, 0.15, 0.22, 0.015);

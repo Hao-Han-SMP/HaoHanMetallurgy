@@ -23,11 +23,6 @@ final class MetallurgyItemRegistry {
             // Replace an older Metallurgy definition so upgrading from the
             // version without CMD immediately fixes the browser on reload.
             if (registry.exists(id)) {
-                var existing = registry.get(id);
-                if (existing != null && java.util.Objects.equals(
-                        existing.getCustomModelData(), item.getCustomModelData())) {
-                    continue;
-                }
                 registry.unregister(id);
             }
 
@@ -41,6 +36,14 @@ final class MetallurgyItemRegistry {
                     // ItemCore retains the gameplay metadata and identity. ItemManager applies
                     // localized text and the configured gameplay stats to each generated stack.
                     .property("metallurgy_item_id", item.getId());
+
+            if (CustomOreBlock.isManagedBlock(item)) {
+                String blockData = CustomOreBlock.blockDataStringFor(item);
+                if (blockData != null) {
+                    definition.property("custom_block_data", blockData);
+                    definition.property("hide_additional_tooltip", true);
+                }
+            }
 
             // Keep CMD in the definition so ItemCore's browser and recipe viewer
             // can render the same resource-pack variant as a normal Metallurgy stack.

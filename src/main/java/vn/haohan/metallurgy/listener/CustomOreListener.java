@@ -16,24 +16,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.block.BlockRedstoneEvent;
-import org.bukkit.event.block.NotePlayEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-/** Implements persistent custom blocks using reserved NoteBlock model states. */
+/** Handles metallurgy custom block mining speed, tiers, drops, and progression. */
 public final class CustomOreListener implements Listener {
     private final HaoHanMetallurgy plugin;
     private final NamespacedKey miningSpeedKey;
@@ -47,9 +38,8 @@ public final class CustomOreListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
-        CustomItem managedBlock = plugin.getCustomOreManager().getOre(block);
-        if (managedBlock == CustomItem.CHARCOAL_BLOCK
-                && CustomOreBlock.matches(block, CustomItem.CHARCOAL_BLOCK)) {
+        CustomItem customBlock = CustomOreBlock.getCustomBlock(block);
+        if (customBlock == CustomItem.CHARCOAL_BLOCK) {
             event.setDropItems(false);
             event.setExpToDrop(0);
             if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
@@ -88,21 +78,6 @@ public final class CustomOreListener implements Listener {
                 : ThreadLocalRandom.current().nextInt(2, 6));
     }
 
-    /** Remove persistence/display only after every protection plugin accepted the break. */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBreakComplete(BlockBreakEvent event) {
-        if (plugin.getCustomOreManager().getOre(event.getBlock()) != null) {
-            plugin.getCustomOreManager().unregister(event.getBlock());
-        }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlace(BlockPlaceEvent event) {
-        CustomItem item = plugin.getItemManager().getCustomItem(event.getItemInHand()).orElse(null);
-        if (!CustomOreBlock.isManagedBlock(item)) return;
-        plugin.getCustomOreManager().register(event.getBlockPlaced(), item);
-    }
-
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPickBlock(PlayerPickItemEvent event) {
         if (event.getPlayer().getGameMode() != GameMode.CREATIVE) return;
@@ -110,7 +85,7 @@ public final class CustomOreListener implements Listener {
         Block targetBlock = event.getPlayer().getTargetBlockExact(5);
         if (targetBlock == null) return;
 
-        CustomItem managedBlock = plugin.getCustomOreManager().getOre(targetBlock);
+        CustomItem managedBlock = CustomOreBlock.getCustomBlock(targetBlock);
         if (managedBlock == null) return;
 
         event.setCancelled(true);
@@ -143,45 +118,6 @@ public final class CustomOreListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPistonRetract(BlockPistonRetractEvent event) {
         if (containsOre(event.getBlocks())) event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onCustomNoteInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
-        CustomItem item = plugin.getCustomOreManager().getOre(event.getClickedBlock());
-        if (item != null && CustomOreBlock.matches(event.getClickedBlock(), item)) {
-            event.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onCustomNotePhysics(BlockPhysicsEvent event) {
-        CustomItem item = plugin.getCustomOreManager().getOre(event.getBlock());
-        if (item != null && CustomOreBlock.matches(event.getBlock(), item)) event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onCustomNoteRedstone(BlockRedstoneEvent event) {
-        CustomItem item = plugin.getCustomOreManager().getOre(event.getBlock());
-        if (item != null && CustomOreBlock.matches(event.getBlock(), item)) {
-            event.setNewCurrent(event.getOldCurrent());
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onCustomNotePlay(NotePlayEvent event) {
-        CustomItem item = plugin.getCustomOreManager().getOre(event.getBlock());
-        if (item != null && CustomOreBlock.matches(event.getBlock(), item)) event.setCancelled(true);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onBlockExplosion(BlockExplodeEvent event) {
-        removeExplodedOres(event.blockList());
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityExplosion(EntityExplodeEvent event) {
-        removeExplodedOres(event.blockList());
     }
 
     private void updateMiningSpeeds() {
@@ -219,8 +155,8 @@ public final class CustomOreListener implements Listener {
     }
 
     private OreType getOre(Block block) {
-        CustomItem item = plugin.getCustomOreManager().getOre(block);
-        if (item == null || !CustomOreBlock.matches(block, item)) return null;
+        CustomItem item = CustomOreBlock.getCustomBlock(block);
+        if (item == null) return null;
         return switch (item) {
             case BORAX_ORE, DEEPSLATE_BORAX_ORE -> new OreType(item, CustomItem.RAW_BORAX, 2, false);
             case MITHRIL_ORE, DEEPSLATE_MITHRIL_ORE -> new OreType(item, CustomItem.MITHRIL_SHARD, 6, true);
@@ -262,16 +198,7 @@ public final class CustomOreListener implements Listener {
     }
 
     private boolean containsOre(List<Block> blocks) {
-        return blocks.stream().anyMatch(block -> plugin.getCustomOreManager().getOre(block) != null);
-    }
-
-    private void removeExplodedOres(List<Block> blocks) {
-        for (Block block : new ArrayList<>(blocks)) {
-            if (plugin.getCustomOreManager().getOre(block) == null) continue;
-            blocks.remove(block);
-            plugin.getCustomOreManager().unregister(block);
-            block.setType(Material.AIR, false);
-        }
+        return blocks.stream().anyMatch(block -> CustomOreBlock.getCustomBlock(block) != null);
     }
 
     private void drop(Block block, CustomItem item, int amount) {

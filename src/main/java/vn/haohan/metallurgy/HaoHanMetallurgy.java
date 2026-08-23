@@ -19,10 +19,11 @@ import vn.haohan.metallurgy.listener.JuteHarvestListener;
 import vn.haohan.metallurgy.listener.VanillaFurnaceListener;
 import vn.haohan.metallurgy.listener.VanillaToolListener;
 import vn.haohan.metallurgy.listener.ManagedDisplayProtectionListener;
+import vn.haohan.metallurgy.listener.MetallurgyNetheriteLockListener;
 import vn.haohan.metallurgy.listener.FurnaceGuideListener;
 import vn.haohan.metallurgy.machine.MachineManager;
 import vn.haohan.metallurgy.progression.ProgressionManager;
-import vn.haohan.metallurgy.recipe.CraftingRecipeManager;
+import vn.haohan.metallurgy.recipe.MetallurgyRecipeRegistry;
 import vn.haohan.metallurgy.recipe.RecipeLoader;
 import vn.haohan.metallurgy.util.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -46,7 +47,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     private ConfigManager configManager;
     private LanguageManager languageManager;
     private ItemManager itemManager;
-    private CraftingRecipeManager craftingRecipeManager;
+    private MetallurgyRecipeRegistry recipeRegistry;
     private RecipeLoader recipeLoader;
     private MachineManager machineManager;
     private ProgressionManager progressionManager;
@@ -55,6 +56,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     private CustomOreListener customOreListener;
     private CharcoalKilnListener charcoalKilnListener;
     private FurnaceGuideListener furnaceGuideListener;
+    private MetallurgyNetheriteLockListener netheriteLockListener;
 
     // ── Lifecycle ──────────────────────────────────────────────
 
@@ -78,18 +80,17 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         configManager = new ConfigManager(this);
         languageManager = new LanguageManager(this);
 
-        // 2.5 Item Manager
+        // 2.5 Item Manager & Recipes in ItemCore
         itemManager = new ItemManager(this);
         progressionManager = new ProgressionManager(this);
         registerDisplayIcons();
-        craftingRecipeManager = new CraftingRecipeManager(this);
-        getServer().getPluginManager().registerEvents(craftingRecipeManager, this);
-        craftingRecipeManager.registerAll();
+        recipeRegistry = new MetallurgyRecipeRegistry(this);
+        recipeRegistry.registerAll();
 
         // 3. Recipe Loader
         recipeLoader = new RecipeLoader(this);
         recipeLoader.loadAll();
-        craftingRecipeManager.registerMachineBrowserRecipes(recipeLoader);
+        recipeRegistry.registerMachineRecipes(recipeLoader);
 
         // 4. Machine Manager
         machineManager = new MachineManager(this);
@@ -113,6 +114,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ManagedDisplayProtectionListener(), this);
         furnaceGuideListener = new FurnaceGuideListener(this);
         getServer().getPluginManager().registerEvents(furnaceGuideListener, this);
+        netheriteLockListener = new MetallurgyNetheriteLockListener(this);
+        netheriteLockListener.removeVanillaNetheriteRecipes();
+        getServer().getPluginManager().registerEvents(netheriteLockListener, this);
 
         // 7. Tick Engine (khởi động sau khi managers sẵn sàng)
         tickEngine = new TickEngine(this);
@@ -200,7 +204,9 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     public ConfigManager getConfigManager() { return configManager; }
     public LanguageManager getLanguageManager() { return languageManager; }
     public ItemManager getItemManager()     { return itemManager; }
-    public CraftingRecipeManager getCraftingRecipeManager() { return craftingRecipeManager; }
+    public MetallurgyRecipeRegistry getMetallurgyRecipeRegistry() { return recipeRegistry; }
+    public MetallurgyRecipeRegistry getRecipeRegistry() { return recipeRegistry; }
+    public MetallurgyRecipeRegistry getCraftingRecipeManager() { return recipeRegistry; }
     public RecipeLoader getRecipeLoader()   { return recipeLoader; }
     public MachineManager getMachineManager() { return machineManager; }
     public ProgressionManager getProgressionManager() { return progressionManager; }

@@ -30,6 +30,7 @@ dependencies {
     compileOnly 'vn.haohan:HaoHanItemCore:1.0.0'
     compileOnly 'com.google.code.gson:gson:2.10.1'
     testImplementation 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    testImplementation 'vn.haohan:HaoHanItemCore:1.0.0'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -80,8 +80,9 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
         try {
             plugin.getConfigManager().reload();
             lang().reload();
-            plugin.getCraftingRecipeManager().registerAll();
+            plugin.getMetallurgyRecipeRegistry().registerAll();
             plugin.getRecipeLoader().loadAll();
+            plugin.getMetallurgyRecipeRegistry().registerMachineRecipes(plugin.getRecipeLoader());
             plugin.getTickEngine().restart();
             return reply(sender, "reload.success", Map.of("count", plugin.getMachineManager().refreshForgeDisplays()));
         } catch (Exception e) {
@@ -139,7 +140,7 @@ public class MetallurgyCommand implements CommandExecutor, TabCompleter {
 
     private boolean language(CommandSender sender, String[] args) {
         if (args.length != 2 || !lang().setLanguage(args[1])) return reply(sender, "language.usage");
-        plugin.getCraftingRecipeManager().registerAll();
+        plugin.getMetallurgyRecipeRegistry().registerAll();
         plugin.getPluginLogger().info("Language changed to " + lang().getLanguage()
                 + "; existing item stacks were left unchanged.");
         return reply(sender, "language.changed");

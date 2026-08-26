@@ -372,7 +372,7 @@ public class ConfigManager {
             config.getString("gui.forge-title", "&8⚒ &6Ancient Forge"));
         forgeCustomGuiEnabled = config.getBoolean("gui.forge-custom.enabled", true);
         forgeCustomGuiPrefix = config.getString("gui.forge-custom.prefix", "\uE100");
-        forgeCustomGuiGlyph = config.getString("gui.forge-custom.glyph", "\uE101");
+        forgeCustomGuiGlyph = config.getString("gui.forge-custom.glyph", "\uE150");
         forgeCustomGuiFont = parseNamespacedKey(config.getString("gui.forge-custom.font", "haohan:gui"));
         failEnabled      = config.getBoolean("fail.enabled", false);
         failBaseChance   = config.getDouble("fail.base-chance", 0.05);

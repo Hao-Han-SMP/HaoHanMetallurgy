@@ -21,6 +21,7 @@ import vn.haohan.metallurgy.listener.VanillaToolListener;
 import vn.haohan.metallurgy.listener.ManagedDisplayProtectionListener;
 import vn.haohan.metallurgy.listener.MetallurgyNetheriteLockListener;
 import vn.haohan.metallurgy.listener.FurnaceGuideListener;
+import vn.haohan.metallurgy.listener.MetallurgyGuideBookListener;
 import vn.haohan.metallurgy.machine.MachineManager;
 import vn.haohan.metallurgy.progression.ProgressionManager;
 import vn.haohan.metallurgy.recipe.MetallurgyRecipeRegistry;
@@ -30,6 +31,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import net.kyori.adventure.text.Component;
 
 public final class HaoHanMetallurgy extends JavaPlugin {
 
@@ -56,6 +58,7 @@ public final class HaoHanMetallurgy extends JavaPlugin {
     private CustomOreListener customOreListener;
     private CharcoalKilnListener charcoalKilnListener;
     private FurnaceGuideListener furnaceGuideListener;
+    private MetallurgyGuideBookListener guideBookListener;
     private MetallurgyNetheriteLockListener netheriteLockListener;
 
     // ── Lifecycle ──────────────────────────────────────────────
@@ -114,6 +117,25 @@ public final class HaoHanMetallurgy extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ManagedDisplayProtectionListener(), this);
         furnaceGuideListener = new FurnaceGuideListener(this);
         getServer().getPluginManager().registerEvents(furnaceGuideListener, this);
+        guideBookListener = new MetallurgyGuideBookListener(this);
+        getServer().getPluginManager().registerEvents(guideBookListener, this);
+
+        registerCommand("metguide", "Give yourself the HaoHan Metallurgy guide book",
+                java.util.List.of("metallurgyguide", "guidebook"), new BasicCommand() {
+                    @Override
+                    public void execute(CommandSourceStack source, String[] args) {
+                        if (source.getSender() instanceof org.bukkit.entity.Player player) {
+                            guideBookListener.giveGuideAgain(player);
+                        } else {
+                            source.getSender().sendMessage(Component.text("Lệnh này chỉ dành cho người chơi."));
+                        }
+                    }
+
+                    @Override
+                    public String permission() {
+                        return "haohansmp.metallurgy.use";
+                    }
+                });
         netheriteLockListener = new MetallurgyNetheriteLockListener(this);
         netheriteLockListener.removeVanillaNetheriteRecipes();
         getServer().getPluginManager().registerEvents(netheriteLockListener, this);

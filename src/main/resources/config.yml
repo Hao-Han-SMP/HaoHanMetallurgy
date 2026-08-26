@@ -56,7 +56,7 @@ gui:
   forge-custom:
     enabled: true
     prefix: "\uE100"
-    glyph: "\uE101"
+    glyph: "\uE150"
     font: "haohan:gui"
   # Slot layout: xem GuiManager hoặc ForgeGui để biết ý nghĩa từng slot
   fuel-slot: 3          # Ô nhiên liệu 1

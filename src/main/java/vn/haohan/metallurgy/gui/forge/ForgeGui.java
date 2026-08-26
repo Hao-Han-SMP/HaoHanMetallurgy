@@ -115,15 +115,15 @@ public class ForgeGui extends MetallurgyGui {
                 fuel1 > 0 ? forge.getActiveFuelType1() : null,
                 fuel2 > 0 ? forge.getActiveFuelType2() : null);
 
-        Material tempMat = temp < 400  ? Material.BLUE_STAINED_GLASS_PANE
-                         : temp < 1000 ? Material.YELLOW_STAINED_GLASS_PANE
-                         :               Material.RED_STAINED_GLASS_PANE;
+        int tempCmd = temp < 400  ? 900020
+                    : temp < 1000 ? 900021
+                    :               900022;
 
         String tempStatus = temp < 400  ? "§bLạnh (Chưa sẵn sàng)"
                           : temp < 1000 ? "§eẤm (Đang gia nhiệt)"
                           :               "§cNóng Rực (Tối đa)";
 
-        inventory.setItem(SLOT_TEMP, makeDisplay(tempMat,
+        inventory.setItem(SLOT_TEMP, makeAtlasDisplay(tempCmd,
             "§c🌡 Nhiệt độ: " + tempStatus + " §7(" + temp + "§7/§f" + maxTemp + "°C)",
             "§7Buồng 1: " + formatFuel(forge.getActiveFuelType1(), fuel1),
             "§7Buồng 2: " + formatFuel(forge.getActiveFuelType2(), fuel2),
@@ -171,8 +171,11 @@ public class ForgeGui extends MetallurgyGui {
             lore.add("§7Đặt nguyên liệu tương ứng vào các ô IN.");
         }
 
-        Material progMat = (state == MachineState.WORKING || state == MachineState.PAUSED) ? Material.CLOCK : Material.COMPARATOR;
-        inventory.setItem(SLOT_PROGRESS, makeDisplayLore(progMat,
+        int progCmd = state == MachineState.WORKING ? 900024
+                    : state == MachineState.PAUSED  ? 900025
+                    :                                 900023;
+
+        inventory.setItem(SLOT_PROGRESS, makeAtlasDisplayLore(progCmd,
             "§b⟶ Tiến trình rèn: §f" + (int)(pct * 100) + "%", lore));
     }
 
@@ -445,6 +448,30 @@ public class ForgeGui extends MetallurgyGui {
     }
 
     // ── Item builder helpers ───────────────────────────────────
+
+    private ItemStack makeAtlasDisplay(int customModelData, String name, String... lore) {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            if (lore.length > 0) meta.setLore(List.of(lore));
+            meta.setCustomModelData(customModelData);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack makeAtlasDisplayLore(int customModelData, String name, List<String> lore) {
+        ItemStack item = new ItemStack(Material.PAPER);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setLore(lore);
+            meta.setCustomModelData(customModelData);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
 
     private ItemStack makeDisplay(Material mat, String name, String... lore) {
         ItemStack item = new ItemStack(mat);

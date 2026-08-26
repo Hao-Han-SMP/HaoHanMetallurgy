@@ -13,6 +13,11 @@ commands:
     usage: /metallurgy <info|reload|debug|list|give|menu|language>
     permission: haohansmp.metallurgy.admin
     aliases: [ met, forge ]
+  metguide:
+    description: Give yourself the HaoHan Metallurgy guide book
+    usage: /metguide
+    permission: haohansmp.metallurgy.use
+    aliases: [ metallurgyguide, guidebook ]
 
 permissions:
   haohansmp.metallurgy.admin:

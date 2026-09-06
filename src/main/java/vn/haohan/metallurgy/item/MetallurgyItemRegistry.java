@@ -30,7 +30,7 @@ final class MetallurgyItemRegistry {
                     .material(item.getMaterial())
                     .displayName(item.getDisplayName())
                     .lore(item.getLore())
-                    .model("minecraft:" + item.getMaterial().name().toLowerCase(java.util.Locale.ROOT))
+                    .model("haohan:" + item.getId())
                     .maxStackSize(item.getMaterial().name().endsWith("PICKAXE") ? 1 : 64)
                     .type(item.getMaterial().name().endsWith("PICKAXE") ? ItemType.TOOL : ItemType.MATERIAL)
                     // ItemCore retains the gameplay metadata and identity. ItemManager applies

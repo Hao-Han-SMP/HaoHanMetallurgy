@@ -405,9 +405,7 @@ public final class FurnaceGuideListener implements Listener {
                                 .decorate(TextDecoration.BOLD),
                         iconBounds, UiTextAlignment.CENTER)
                         .fontSize(selected ? 8.0f : 7.0f)
-                        .contentWidth(measureTextWidth(Component.text("i"),
-                                selected ? 8.0f : 7.0f))
-                        .verticalAlignment(UiVerticalAlignment.CENTER)
+                        .align(UiVerticalAlignment.CENTER)
                         .verticalOffset(-1.0f)
                         .shadowed(true)
                         .atDepth(ICON_DEPTH);
@@ -473,8 +471,7 @@ public final class FurnaceGuideListener implements Listener {
         measured = Math.min(bounds.width(), measureTextWidth(text, fittedSize));
         builder.add(new AlignedTextNode(text, bounds, alignment)
                 .fontSize(fittedSize)
-                .contentWidth(Math.max(1.0f, measured))
-                .verticalAlignment(UiVerticalAlignment.CENTER)
+                .align(UiVerticalAlignment.CENTER)
                 .verticalOffset(-1.0f)
                 .shadowed(true)
                 .atDepth(TEXT_DEPTH));
@@ -499,7 +496,6 @@ public final class FurnaceGuideListener implements Listener {
                 Component.text(label, MAGENTA).decorate(TextDecoration.BOLD),
                 bounds, UiTextAlignment.CENTER)
                 .fontSize(6.0f)
-                .contentWidth(measureTextWidth(Component.text(label), 6.0f))
                 .verticalOffset(-1.0f)
                 .shadowed(true)
                 .atDepth(ICON_DEPTH);

@@ -53,8 +53,9 @@ public class ItemManager {
             if (customItem.getCustomModelData() > 0) {
                 meta.setCustomModelData(customItem.getCustomModelData());
             }
-            if (customItem == CustomItem.BOW_DRILL) {
-                meta.setItemModel(BOW_DRILL_MODEL);
+            NamespacedKey modelKey = NamespacedKey.fromString("haohan:" + customItem.getId());
+            if (modelKey != null) {
+                meta.setItemModel(modelKey);
             }
             meta.getPersistentDataContainer().set(itemKey, PersistentDataType.STRING, customItem.getId());
             itemStack.setItemMeta(meta);
@@ -147,13 +148,15 @@ public class ItemManager {
                 && blockDataMeta.hasBlockData();
         boolean missingTooltipHide = CustomOreBlock.isManagedBlock(customItem)
                 && (currentMeta == null || !currentMeta.hasItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP));
-        boolean needsCarrierMigration = CustomOreBlock.isManagedBlock(customItem)
-                && (!correctMaterial || hasLegacyBlockData || missingTooltipHide);
-        boolean correctBowDrillModel = currentMeta != null
+        NamespacedKey expectedModel = NamespacedKey.fromString("haohan:" + customItem.getId());
+        boolean correctModel = currentMeta != null
                 && currentMeta.hasItemModel()
-                && BOW_DRILL_MODEL.equals(currentMeta.getItemModel());
+                && expectedModel != null
+                && expectedModel.equals(currentMeta.getItemModel());
+        boolean needsCarrierMigration = CustomOreBlock.isManagedBlock(customItem)
+                && (!correctMaterial || hasLegacyBlockData || missingTooltipHide || !correctModel);
         boolean needsBowDrillMigration = customItem == CustomItem.BOW_DRILL
-                && (!correctMaterial || !correctBowDrillModel);
+                && (!correctMaterial || !correctModel);
         if (!needsCarrierMigration && !needsBowDrillMigration) {
             return itemStack;
         }

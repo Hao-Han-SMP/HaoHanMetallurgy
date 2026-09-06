@@ -35,7 +35,7 @@ import net.kyori.adventure.text.Component;
 
 public final class HaoHanMetallurgy extends JavaPlugin {
 
-    private static final String REQUIRED_DISPLAY_UI_VERSION = "1.1.0";
+    private static final String REQUIRED_DISPLAY_UI_VERSION = "1.0.2";
 
     // ── Singleton ──────────────────────────────────────────────
     private static HaoHanMetallurgy instance;

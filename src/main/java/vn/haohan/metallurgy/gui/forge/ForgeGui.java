@@ -7,6 +7,7 @@ import vn.haohan.metallurgy.machine.forge.AncientForge;
 import vn.haohan.metallurgy.recipe.MetallurgyRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -449,12 +450,17 @@ public class ForgeGui extends MetallurgyGui {
 
     // ── Item builder helpers ───────────────────────────────────
 
+    private static final NamespacedKey ICON_MODEL_KEY = NamespacedKey.fromString("haohan:icon");
+
     private ItemStack makeAtlasDisplay(int customModelData, String name, String... lore) {
         ItemStack item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
             if (lore.length > 0) meta.setLore(List.of(lore));
+            if (ICON_MODEL_KEY != null) {
+                meta.setItemModel(ICON_MODEL_KEY);
+            }
             meta.setCustomModelData(customModelData);
             item.setItemMeta(meta);
         }
@@ -467,6 +473,9 @@ public class ForgeGui extends MetallurgyGui {
         if (meta != null) {
             meta.setDisplayName(name);
             meta.setLore(lore);
+            if (ICON_MODEL_KEY != null) {
+                meta.setItemModel(ICON_MODEL_KEY);
+            }
             meta.setCustomModelData(customModelData);
             item.setItemMeta(meta);
         }

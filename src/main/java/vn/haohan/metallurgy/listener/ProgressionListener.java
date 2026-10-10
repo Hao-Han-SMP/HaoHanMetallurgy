@@ -89,6 +89,16 @@ public class ProgressionListener implements Listener {
             return 0;
         }
 
+        try {
+            var core = vn.haohan.itemcore.api.HaoHanItemCore.get();
+            if (core != null && core.getToolTierRegistry() != null) {
+                var toolTier = core.getToolTierRegistry().findTier(tool);
+                if (toolTier != null) {
+                    return toolTier.level();
+                }
+            }
+        } catch (Throwable ignored) {}
+
         Optional<CustomItem> customOpt = plugin.getItemManager().getCustomItem(tool);
         if (customOpt.isPresent()) {
             int configuredTier = plugin.getConfigManager().getCustomItemStats(customOpt.get()).tier();

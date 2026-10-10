@@ -9,10 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CustomOreBlockTest {
     @Test
     void mapsEveryCustomOreToItsCarrier() {
-        assertEquals(org.bukkit.Material.NOTE_BLOCK, CustomOreBlock.carrierFor(CustomItem.BORAX_ORE));
-        assertEquals(org.bukkit.Material.NOTE_BLOCK, CustomOreBlock.carrierFor(CustomItem.DEEPSLATE_BORAX_ORE));
-        assertEquals(org.bukkit.Material.NOTE_BLOCK, CustomOreBlock.carrierFor(CustomItem.MITHRIL_ORE));
-        assertEquals(org.bukkit.Material.NOTE_BLOCK, CustomOreBlock.carrierFor(CustomItem.DEEPSLATE_MITHRIL_ORE));
+        assertEquals(org.bukkit.Material.BARRIER, CustomOreBlock.carrierFor(CustomItem.BORAX_ORE));
+        assertEquals(org.bukkit.Material.BARRIER, CustomOreBlock.carrierFor(CustomItem.DEEPSLATE_BORAX_ORE));
+        assertEquals(org.bukkit.Material.BARRIER, CustomOreBlock.carrierFor(CustomItem.MITHRIL_ORE));
+        assertEquals(org.bukkit.Material.BARRIER, CustomOreBlock.carrierFor(CustomItem.DEEPSLATE_MITHRIL_ORE));
         assertEquals(org.bukkit.Material.STONE, CustomOreBlock.legacyCarrierFor(CustomItem.BORAX_ORE));
         assertEquals(org.bukkit.Material.DEEPSLATE,
                 CustomOreBlock.legacyCarrierFor(CustomItem.DEEPSLATE_MITHRIL_ORE));
@@ -26,7 +26,7 @@ class CustomOreBlockTest {
 
     @Test
     void charcoalBlockUsesAManagedNoteBlockCarrier() {
-        assertEquals(org.bukkit.Material.NOTE_BLOCK, CustomOreBlock.carrierFor(CustomItem.CHARCOAL_BLOCK));
+        assertEquals(org.bukkit.Material.BARRIER, CustomOreBlock.carrierFor(CustomItem.CHARCOAL_BLOCK));
         assertEquals(org.bukkit.Material.COAL_BLOCK, CustomOreBlock.legacyCarrierFor(CustomItem.CHARCOAL_BLOCK));
         assertTrue(CustomOreBlock.isManagedBlock(CustomItem.CHARCOAL_BLOCK));
         assertFalse(CustomOreBlock.isOre(CustomItem.CHARCOAL_BLOCK));

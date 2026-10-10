@@ -79,9 +79,9 @@ class MetallurgyRecipeRegistryTest {
         MetallurgyRecipeRegistry registry = new MetallurgyRecipeRegistry(null);
         registry.registerAll();
 
-        // Check total count: 16 crafting recipes
-        assertEquals(16, registry.getRegisteredRecipeIds().size());
-        assertEquals(16, recipeRegistry.size());
+        // Check total count: 16 crafting + 22 smelting/blasting = 38 recipes
+        assertEquals(38, registry.getRegisteredRecipeIds().size());
+        assertEquals(38, recipeRegistry.size());
 
         // 1. Mithril ingot to shards (Shapeless)
         RecipeDefinition ingotToShards = recipeRegistry.require("haohanmetallurgy:mithril_ingot_to_shards");
@@ -153,7 +153,7 @@ class MetallurgyRecipeRegistryTest {
     void testUnregisterAll() {
         MetallurgyRecipeRegistry registry = new MetallurgyRecipeRegistry(null);
         registry.registerAll();
-        assertEquals(16, recipeRegistry.size());
+        assertEquals(38, recipeRegistry.size());
 
         registry.unregisterAll();
         assertEquals(0, recipeRegistry.size());

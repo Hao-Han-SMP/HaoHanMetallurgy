@@ -207,7 +207,17 @@ public final class CharcoalKilnListener implements Listener {
             log.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, smoke, 1, 0.08, 0.04, 0.08, 0.005);
             if (now < entry.getValue().finishAt()) continue;
 
-            log.setBlockData(CustomOreBlock.blockDataFor(CustomItem.CHARCOAL_BLOCK), false);
+            Location logLoc = log.getLocation();
+            boolean placed = false;
+            try {
+                var core = vn.haohan.itemcore.api.HaoHanItemCore.get();
+                if (core != null && core.getCustomBlockService() != null) {
+                    placed = core.getCustomBlockService().placeCustomBlock(logLoc, "haohanmetallurgy:charcoal_block");
+                }
+            } catch (Throwable ignored) {}
+            if (!placed) {
+                log.setBlockData(CustomOreBlock.blockDataFor(CustomItem.CHARCOAL_BLOCK), false);
+            }
             dryMudShell(log);
             log.getWorld().playSound(smoke, Sound.BLOCK_FIRE_EXTINGUISH, 0.9f, 0.75f);
             log.getWorld().spawnParticle(Particle.LARGE_SMOKE, smoke, 10, 0.22, 0.15, 0.22, 0.015);

@@ -21,11 +21,11 @@ public final class CustomOreBlock {
     }
 
     public static boolean isManagedBlock(CustomItem item) {
-        return carrierFor(item) != null;
+        return noteFor(item) > 0;
     }
 
     public static Material carrierFor(CustomItem item) {
-        return noteFor(item) > 0 ? Material.NOTE_BLOCK : null;
+        return isManagedBlock(item) ? Material.BARRIER : null;
     }
 
     public static Material legacyCarrierFor(CustomItem item) {
@@ -49,7 +49,17 @@ public final class CustomOreBlock {
     }
 
     public static boolean matches(Block block, CustomItem item) {
-        return block != null && matches(block.getBlockData(), item);
+        if (block == null || item == null) return false;
+        try {
+            var core = vn.haohan.itemcore.api.HaoHanItemCore.get();
+            if (core != null && core.getCustomBlockService() != null) {
+                String id = core.getCustomBlockService().getCustomBlockId(block);
+                if (id != null) {
+                    return id.equals("haohanmetallurgy:" + item.getId()) || id.equals(item.getId());
+                }
+            }
+        } catch (Throwable ignored) {}
+        return matches(block.getBlockData(), item);
     }
 
     public static boolean matches(BlockData blockData, CustomItem item) {
@@ -66,6 +76,19 @@ public final class CustomOreBlock {
 
     public static CustomItem getCustomBlock(Block block) {
         if (block == null) return null;
+        try {
+            var core = vn.haohan.itemcore.api.HaoHanItemCore.get();
+            if (core != null && core.getCustomBlockService() != null) {
+                String id = core.getCustomBlockService().getCustomBlockId(block);
+                if (id != null) {
+                    if (id.startsWith("haohanmetallurgy:")) {
+                        id = id.substring("haohanmetallurgy:".length());
+                    }
+                    var customOpt = CustomItem.getById(id);
+                    if (customOpt.isPresent()) return customOpt.get();
+                }
+            }
+        } catch (Throwable ignored) {}
         return getCustomBlock(block.getBlockData());
     }
 

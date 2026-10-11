@@ -333,8 +333,8 @@ public final class MetallurgyItemRegistry {
         registerVanillaBlock(cbRegistry, Material.DEEPSLATE_LAPIS_ORE, 4.5f, tierCopper);
 
         // 4. Diamond ores (Level 5 - Embersteel pickaxe required)
-        registerVanillaBlock(cbRegistry, Material.DIAMOND_ORE, 6.0f, tierEmbersteel);
-        registerVanillaBlock(cbRegistry, Material.DEEPSLATE_DIAMOND_ORE, 9.0f, tierEmbersteel);
+        registerVanillaBlock(cbRegistry, Material.DIAMOND_ORE, 3.0f, tierEmbersteel);
+        registerVanillaBlock(cbRegistry, Material.DEEPSLATE_DIAMOND_ORE, 4.5f, tierEmbersteel);
 
         // 5. Obsidian (Level 7 - Mithril)
         registerVanillaBlock(cbRegistry, Material.OBSIDIAN, 50.0f, tierMithril);

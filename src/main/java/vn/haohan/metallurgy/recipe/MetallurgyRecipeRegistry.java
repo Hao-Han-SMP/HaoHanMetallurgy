@@ -41,13 +41,39 @@ public class MetallurgyRecipeRegistry {
     }
 
     /**
-     * Đăng ký tất cả các công thức chế tạo bàn (Crafting Table) vào ItemCore.
+     * Đăng ký tất cả các công thức chế tạo bàn (Crafting Table) và lò nung vào ItemCore.
      */
     public void registerAll() {
         unregisterAll();
         registerCraftingRecipes();
+        registerFurnaceRecipes();
         if (plugin != null && plugin.getPluginLogger() != null) {
             plugin.getPluginLogger().info("Registered " + registeredRecipeIds.size() + " Metallurgy recipes in HaoHanItemCore.");
+        }
+    }
+
+    private void registerFurnaceRecipes() {
+        // Controlled metal smelting & blasting recipes registered in ItemCore for viewing
+        registerMetalSmeltAndBlast("copper", List.of(Material.RAW_COPPER, Material.COPPER_ORE, Material.DEEPSLATE_COPPER_ORE), Material.COPPER_INGOT);
+        registerMetalSmeltAndBlast("iron", List.of(Material.RAW_IRON, Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE), Material.IRON_INGOT);
+        registerMetalSmeltAndBlast("gold", List.of(Material.RAW_GOLD, Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE, Material.NETHER_GOLD_ORE), Material.GOLD_INGOT);
+        registerMetalSmeltAndBlast("netherite", List.of(Material.ANCIENT_DEBRIS), Material.NETHERITE_SCRAP);
+    }
+
+    private void registerMetalSmeltAndBlast(String name, List<Material> inputs, Material output) {
+        for (Material input : inputs) {
+            String suffix = input.name().toLowerCase(java.util.Locale.ROOT);
+            register(new RecipeDefinition("haohanmetallurgy:" + name + "_smelt_" + suffix,
+                    RecipeType.SMELTING,
+                    List.of(new Ingredient.MaterialIngredient(input)),
+                    new ItemResult("minecraft:" + output.name().toLowerCase(java.util.Locale.ROOT), 1),
+                    0.7f, 200));
+
+            register(new RecipeDefinition("haohanmetallurgy:" + name + "_blast_" + suffix,
+                    RecipeType.BLASTING,
+                    List.of(new Ingredient.MaterialIngredient(input)),
+                    new ItemResult("minecraft:" + output.name().toLowerCase(java.util.Locale.ROOT), 1),
+                    0.7f, 100));
         }
     }
 

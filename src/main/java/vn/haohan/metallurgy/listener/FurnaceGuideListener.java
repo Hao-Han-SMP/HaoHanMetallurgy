@@ -5,7 +5,7 @@ import vn.haohan.displayui.api.UiDocument;
 import vn.haohan.displayui.api.UiHandle;
 import vn.haohan.displayui.api.UiOptions;
 import vn.haohan.displayui.api.interaction.UiButton;
-import vn.haohan.displayui.api.layout.UiAnchor;
+import vn.haohan.displayui.api.layout.UiAnchorPoint;
 import vn.haohan.displayui.api.layout.UiCameraTransform;
 import vn.haohan.displayui.api.layout.UiRect;
 import vn.haohan.displayui.api.node.AlignedTextNode;
@@ -397,7 +397,7 @@ public final class FurnaceGuideListener implements Listener {
             UiRect slot = new UiRect(slotsLeft + visibleIndex * slotWidth,
                     NAV_PANEL.top(), slotWidth, NAV_PANEL.height());
             boolean selected = index == state.categoryIndex;
-            UiRect iconBounds = slot.place(UiAnchor.TOP_CENTER, UiAnchor.TOP_CENTER,
+            UiRect iconBounds = slot.place(UiAnchorPoint.CENTER_TOP, UiAnchorPoint.CENTER_TOP,
                     selected ? 8.0f : 7.0f, selected ? 8.0f : 7.0f, 0.0f, 0.5f);
             if (category.kind() == MetallurgyCategory.Kind.INFO) {
                 AlignedTextNode infoIcon = new AlignedTextNode(
@@ -516,7 +516,7 @@ public final class FurnaceGuideListener implements Listener {
     private UiDocument collapsedDocument() {
         UiRect collapsed = UiRect.centered(0.0f, 0.0f, 20.0f, 20.0f);
         UiRect iconBounds = collapsed.place(
-                UiAnchor.CENTER, UiAnchor.CENTER, 14.0f, 14.0f, 0.0f, 0.0f);
+                UiAnchorPoint.CENTER, UiAnchorPoint.CENTER, 14.0f, 14.0f, 0.0f, 0.0f);
         UiIconNode icon = new UiIconNode(new ItemStack(Material.KNOWLEDGE_BOOK),
                 iconBounds, ICON_DEPTH, 16.0f, 16.0f, ItemDisplay.ItemDisplayTransform.FIXED);
         return UiDocument.builder()

@@ -24,7 +24,7 @@ public final class HaoHanMetallurgyBootstrap implements PluginBootstrap {
                         event.registrar().discoverPack(
                                 uri,
                                 "advancements",
-                                configurer -> configurer.autoEnableOnServerStart(true));
+                                configurer -> configurer.autoEnableOnServerStart(false));
                     } catch (URISyntaxException | IOException exception) {
                         throw new IllegalStateException(
                                 "Could not discover bundled HaoHan advancement pack", exception);

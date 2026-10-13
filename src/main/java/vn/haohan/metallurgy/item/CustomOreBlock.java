@@ -21,7 +21,11 @@ public final class CustomOreBlock {
     }
 
     public static boolean isManagedBlock(CustomItem item) {
-        return noteFor(item) > 0;
+        if (item == null) return false;
+        return switch (item) {
+            case BORAX_ORE, MITHRIL_ORE, DEEPSLATE_BORAX_ORE, DEEPSLATE_MITHRIL_ORE, CHARCOAL_BLOCK -> true;
+            default -> false;
+        };
     }
 
     public static Material carrierFor(CustomItem item) {
@@ -39,13 +43,8 @@ public final class CustomOreBlock {
     }
 
     public static BlockData blockDataFor(CustomItem item) {
-        int note = noteFor(item);
-        if (note <= 0) throw new IllegalArgumentException("Not a managed custom block: " + item);
-        NoteBlock data = (NoteBlock) Bukkit.createBlockData(Material.NOTE_BLOCK);
-        data.setInstrument(Instrument.CUSTOM_HEAD);
-        data.setNote(new Note(note));
-        data.setPowered(false);
-        return data;
+        if (!isManagedBlock(item)) throw new IllegalArgumentException("Not a managed custom block: " + item);
+        return Bukkit.createBlockData(Material.BARRIER);
     }
 
     public static boolean matches(Block block, CustomItem item) {
@@ -63,15 +62,15 @@ public final class CustomOreBlock {
     }
 
     public static boolean matches(BlockData blockData, CustomItem item) {
+        if (blockData == null || item == null) return false;
+        if (blockData.getMaterial() == Material.BARRIER && isManagedBlock(item)) return true;
         if (!(blockData instanceof NoteBlock data)) return false;
         return data.getInstrument() == Instrument.CUSTOM_HEAD
                 && data.getNote().getId() == noteFor(item);
     }
 
     public static String blockDataStringFor(CustomItem item) {
-        int note = noteFor(item);
-        if (note <= 0) return null;
-        return "minecraft:note_block[instrument=custom_head,note=" + note + ",powered=false]";
+        return null;
     }
 
     public static CustomItem getCustomBlock(Block block) {

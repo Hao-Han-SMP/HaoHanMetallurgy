@@ -274,10 +274,18 @@ public final class MetallurgyItemRegistry {
             dropBuilder.defaultDrop(dropItemId, 1);
         }
 
-        // Required ToolTier: Borax needs Stone (level 2), Mithril needs Diamond (level 4 vanilla / 6 in metallurgy chain)
-        ToolTier requiredTier = (item == CustomItem.MITHRIL_ORE || item == CustomItem.DEEPSLATE_MITHRIL_ORE)
-                ? ToolTier.DIAMOND
-                : (CustomOreBlock.isOre(item) ? ToolTier.STONE : ToolTier.WOOD);
+        // Required ToolTier resolved by name from the registry so levels follow the Metallurgy scale:
+        // Borax needs stone (2), Mithril needs diamond (6).
+        var tierRegistry = HaoHanItemCore.get() != null ? HaoHanItemCore.get().getToolTierRegistry() : null;
+        boolean mithril = item == CustomItem.MITHRIL_ORE || item == CustomItem.DEEPSLATE_MITHRIL_ORE;
+        ToolTier requiredTier;
+        if (mithril) {
+            requiredTier = tierRegistry != null ? tierRegistry.getOrDefault("diamond", ToolTier.DIAMOND) : ToolTier.DIAMOND;
+        } else if (CustomOreBlock.isOre(item)) {
+            requiredTier = tierRegistry != null ? tierRegistry.getOrDefault("stone", ToolTier.STONE) : ToolTier.STONE;
+        } else {
+            requiredTier = tierRegistry != null ? tierRegistry.getOrDefault("wood", ToolTier.WOOD) : ToolTier.WOOD;
+        }
 
         CustomBlockSoundGroup soundGroup = (item == CustomItem.DEEPSLATE_BORAX_ORE || item == CustomItem.DEEPSLATE_MITHRIL_ORE)
                 ? CustomBlockSoundGroup.builder()
@@ -333,8 +341,8 @@ public final class MetallurgyItemRegistry {
         registerVanillaBlock(cbRegistry, Material.DEEPSLATE_LAPIS_ORE, 4.5f, tierCopper);
 
         // 4. Diamond ores (Level 5 - Embersteel pickaxe required)
-        registerVanillaBlock(cbRegistry, Material.DIAMOND_ORE, 6.0f, tierEmbersteel);
-        registerVanillaBlock(cbRegistry, Material.DEEPSLATE_DIAMOND_ORE, 9.0f, tierEmbersteel);
+        registerVanillaBlock(cbRegistry, Material.DIAMOND_ORE, 3.0f, tierEmbersteel);
+        registerVanillaBlock(cbRegistry, Material.DEEPSLATE_DIAMOND_ORE, 4.5f, tierEmbersteel);
 
         // 5. Obsidian (Level 7 - Mithril)
         registerVanillaBlock(cbRegistry, Material.OBSIDIAN, 50.0f, tierMithril);

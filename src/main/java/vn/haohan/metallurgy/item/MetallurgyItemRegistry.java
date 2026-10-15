@@ -3,11 +3,13 @@ package vn.haohan.metallurgy.item;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import vn.haohan.itemcore.api.HaoHanItemCore;
+import vn.haohan.itemcore.api.block.AlternativeCustomBlock;
 import vn.haohan.itemcore.api.block.BlockDropProvider;
 import vn.haohan.itemcore.api.block.CustomBlockDefinition;
 import vn.haohan.itemcore.api.block.CustomBlockModel;
 import vn.haohan.itemcore.api.block.CustomBlockRegistry;
 import vn.haohan.itemcore.api.block.CustomBlockSoundGroup;
+import vn.haohan.itemcore.api.block.NativeCustomBlock;
 import vn.haohan.itemcore.api.block.MiningCondition;
 import vn.haohan.itemcore.api.block.ToolTier;
 import vn.haohan.itemcore.api.block.ToolType;
@@ -78,6 +80,7 @@ public final class MetallurgyItemRegistry {
             if (isBlock) {
                 float hardness = getHardnessFor(item, plugin);
                 String dropId = getDropItemIdFor(item);
+                int variation = CustomOreBlock.variationFor(item);
 
                 definition.property("custom_block_id", id);
                 definition.property("custom_block_model", "haohan:" + item.getId());
@@ -85,9 +88,12 @@ public final class MetallurgyItemRegistry {
                 definition.property("custom_block_hardness", hardness);
                 definition.property("custom_block_tool_type", "PICKAXE");
                 definition.property("hide_additional_tooltip", true);
+                if (variation >= 0) {
+                    definition.property("custom_variation", variation);
+                }
 
                 if (customBlockService != null) {
-                    registerCustomBlock(customBlockService, item, id, dropId, hardness);
+                    registerCustomBlock(customBlockService, item, id, dropId, hardness, variation);
                 }
             }
 
@@ -243,7 +249,8 @@ public final class MetallurgyItemRegistry {
 
     private static void registerCustomBlock(vn.haohan.itemcore.api.block.CustomBlockService service,
                                             CustomItem item, String id,
-                                            String dropItemId, float hardness) {
+                                            String dropItemId, float hardness,
+                                            int variation) {
         var cbRegistry = service.getRegistry();
         if (cbRegistry == null) return;
 
@@ -255,7 +262,7 @@ public final class MetallurgyItemRegistry {
         }
         if (itemStack == null) {
             try {
-                itemStack = new org.bukkit.inventory.ItemStack(item.getMaterial() != null ? item.getMaterial() : Material.BARRIER);
+                itemStack = new org.bukkit.inventory.ItemStack(item.getMaterial() != null ? item.getMaterial() : Material.NOTE_BLOCK);
                 var meta = itemStack.getItemMeta();
                 if (meta != null) {
                     try {
@@ -303,7 +310,14 @@ public final class MetallurgyItemRegistry {
                     .build()
                 : CustomBlockSoundGroup.STONE;
 
-        CustomBlockDefinition def = CustomBlockDefinition.builder(id)
+        CustomBlockDefinition.AbstractBuilder<?, ?> blockBuilder;
+        if (variation >= 0) {
+            blockBuilder = NativeCustomBlock.builder(id).customVariation(variation);
+        } else {
+            blockBuilder = AlternativeCustomBlock.builder(id);
+        }
+
+        CustomBlockDefinition def = blockBuilder
                 .model(model)
                 .hardness(hardness)
                 .mineableWith(ToolType.PICKAXE, requiredTier)

@@ -29,7 +29,7 @@ public final class CustomOreBlock {
     }
 
     public static Material carrierFor(CustomItem item) {
-        return isManagedBlock(item) ? Material.BARRIER : null;
+        return isManagedBlock(item) ? Material.NOTE_BLOCK : null;
     }
 
     public static Material legacyCarrierFor(CustomItem item) {
@@ -43,8 +43,13 @@ public final class CustomOreBlock {
     }
 
     public static BlockData blockDataFor(CustomItem item) {
-        if (!isManagedBlock(item)) throw new IllegalArgumentException("Not a managed custom block: " + item);
-        return Bukkit.createBlockData(Material.BARRIER);
+        int variation = variationFor(item);
+        if (variation < 0) throw new IllegalArgumentException("Not a managed custom block: " + item);
+        NoteBlock data = (NoteBlock) Bukkit.createBlockData(Material.NOTE_BLOCK);
+        data.setInstrument(Instrument.FLUTE);
+        data.setNote(new Note(variation - 100));
+        data.setPowered(false);
+        return data;
     }
 
     public static boolean matches(Block block, CustomItem item) {
@@ -63,10 +68,12 @@ public final class CustomOreBlock {
 
     public static boolean matches(BlockData blockData, CustomItem item) {
         if (blockData == null || item == null) return false;
-        if (blockData.getMaterial() == Material.BARRIER && isManagedBlock(item)) return true;
+        int targetVar = variationFor(item);
+        if (targetVar < 0) return false;
         if (!(blockData instanceof NoteBlock data)) return false;
-        return data.getInstrument() == Instrument.CUSTOM_HEAD
-                && data.getNote().getId() == noteFor(item);
+        if (data.getInstrument() != Instrument.FLUTE) return false;
+        if (data.isPowered()) return false;
+        return data.getNote() != null && data.getNote().getId() == (targetVar - 100);
     }
 
     public static String blockDataStringFor(CustomItem item) {
@@ -93,26 +100,39 @@ public final class CustomOreBlock {
 
     public static CustomItem getCustomBlock(BlockData blockData) {
         if (!(blockData instanceof NoteBlock data)) return null;
-        if (data.getInstrument() != Instrument.CUSTOM_HEAD) return null;
+        if (data.getInstrument() != Instrument.FLUTE) return null;
+        if (data.isPowered()) return null;
+        if (data.getNote() == null) return null;
         return switch (data.getNote().getId()) {
-            case 20 -> CustomItem.BORAX_ORE;
-            case 21 -> CustomItem.MITHRIL_ORE;
-            case 22 -> CustomItem.DEEPSLATE_BORAX_ORE;
-            case 23 -> CustomItem.DEEPSLATE_MITHRIL_ORE;
-            case 24 -> CustomItem.CHARCOAL_BLOCK;
+            case 0 -> CustomItem.BORAX_ORE;
+            case 1 -> CustomItem.MITHRIL_ORE;
+            case 2 -> CustomItem.DEEPSLATE_BORAX_ORE;
+            case 3 -> CustomItem.DEEPSLATE_MITHRIL_ORE;
+            case 4 -> CustomItem.CHARCOAL_BLOCK;
             default -> null;
         };
     }
 
-    private static int noteFor(CustomItem item) {
+    public static int variationFor(CustomItem item) {
         if (item == null) return -1;
         return switch (item) {
-            case BORAX_ORE -> 20;
-            case MITHRIL_ORE -> 21;
-            case DEEPSLATE_BORAX_ORE -> 22;
-            case DEEPSLATE_MITHRIL_ORE -> 23;
-            case CHARCOAL_BLOCK -> 24;
+            case BORAX_ORE -> 100;
+            case MITHRIL_ORE -> 101;
+            case DEEPSLATE_BORAX_ORE -> 102;
+            case DEEPSLATE_MITHRIL_ORE -> 103;
+            case CHARCOAL_BLOCK -> 104;
             default -> -1;
+        };
+    }
+
+    public static CustomItem fromVariation(int variation) {
+        return switch (variation) {
+            case 100 -> CustomItem.BORAX_ORE;
+            case 101 -> CustomItem.MITHRIL_ORE;
+            case 102 -> CustomItem.DEEPSLATE_BORAX_ORE;
+            case 103 -> CustomItem.DEEPSLATE_MITHRIL_ORE;
+            case 104 -> CustomItem.CHARCOAL_BLOCK;
+            default -> null;
         };
     }
 }

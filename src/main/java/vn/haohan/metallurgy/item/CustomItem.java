@@ -186,23 +186,23 @@ public enum CustomItem {
         List.of("§7Hai que gỗ căng bằng dây đay.", "§8Giữ chuột phải trên lò mud để nhóm lửa.")
     ),
     CHARCOAL_BLOCK(
-        "charcoal_block", Material.BARRIER, 1038, "§8Khối than gỗ",
+        "charcoal_block", Material.NOTE_BLOCK, 1038, "§8Khối than gỗ",
         List.of("§7Khối carbon thu được khi ủ gỗ trong mud.", "§8Một nguồn nhiên liệu cô đặc.")
     ),
     BORAX_ORE(
-        "borax_ore", Material.BARRIER, 1031, "§fBorax Ore",
+        "borax_ore", Material.NOTE_BLOCK, 1031, "§fBorax Ore",
         List.of("§7Đá chứa các cụm tinh thể Borax.", "§8Đặt xuống để tạo khối quặng tùy chỉnh.")
     ),
     MITHRIL_ORE(
-        "mithril_ore", Material.BARRIER, 1032, "§bMithril Ore",
+        "mithril_ore", Material.NOTE_BLOCK, 1032, "§bMithril Ore",
         List.of("§7Quặng Mithril ánh bạc xanh quý hiếm.", "§8Đặt xuống để tạo khối quặng tùy chỉnh.")
     ),
     DEEPSLATE_BORAX_ORE(
-        "deepslate_borax_ore", Material.BARRIER, 1033, "§fDeepslate Borax Ore",
+        "deepslate_borax_ore", Material.NOTE_BLOCK, 1033, "§fDeepslate Borax Ore",
         List.of("§7Borax kết tinh trong đá phiến sâu.", "§8Có thể khai thác bằng cúp đá trở lên.")
     ),
     DEEPSLATE_MITHRIL_ORE(
-        "deepslate_mithril_ore", Material.BARRIER, 1034, "§bDeepslate Mithril Ore",
+        "deepslate_mithril_ore", Material.NOTE_BLOCK, 1034, "§bDeepslate Mithril Ore",
         List.of("§7Mithril quý hiếm trong đá phiến sâu.", "§8Cần cúp kim cương trở lên.")
     );
 

@@ -29,7 +29,7 @@ public final class CustomOreBlock {
     }
 
     public static Material carrierFor(CustomItem item) {
-        return isManagedBlock(item) ? Material.NOTE_BLOCK : null;
+        return isManagedBlock(item) ? Material.BARRIER : null;
     }
 
     public static Material legacyCarrierFor(CustomItem item) {

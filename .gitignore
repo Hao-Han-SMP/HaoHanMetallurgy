@@ -4,3 +4,6 @@
 **/build/
 /.idea/
 /*.iml
+
+bin/
+ignite-patch/bin/

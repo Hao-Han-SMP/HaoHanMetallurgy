@@ -16,21 +16,26 @@ java {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
     maven {
         name = 'papermc'
         url = 'https://repo.papermc.io/repository/maven-public/'
     }
+    maven {
+        name = 'jitpack'
+        url = 'https://jitpack.io'
+    }
+    mavenLocal()
 }
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-    compileOnly 'vn.haohan:HaoHanDisplayUI:1.0.2'
-    compileOnly 'vn.haohan:HaoHanItemCore:1.0.0'
+    compileOnly 'com.github.Hao-Han-SMP:HaoHanDisplayUI:v1.0.2'
+    compileOnly 'com.github.Hao-Han-SMP:HaoHanItemCore:v1.0.0'
     compileOnly 'com.google.code.gson:gson:2.10.1'
     testImplementation 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-    testImplementation 'vn.haohan:HaoHanItemCore:1.0.0'
+    testImplementation 'com.github.Hao-Han-SMP:HaoHanItemCore:v1.0.0'
+    testImplementation 'com.github.Hao-Han-SMP:HaoHanDisplayUI:v1.0.2'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
